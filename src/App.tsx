@@ -1,9 +1,9 @@
 import type { Component, Ref } from 'solid-js';
 
 import { createSignal, createEffect, onMount } from 'solid-js';
+import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
+import { Line } from 'solid-chartjs'
 import styles from './App.module.css';
-
-const MAX_AGE = 200;
 
 type Data = {
 	year: number,
@@ -21,50 +21,30 @@ function calculateData(
 	startingBalance: number,
 	interestRate: number,
 	retirementAge: number,
+	maxAge: number,
 	startingInvestmentPerMonth: number,
 	investmentIncreasingRate: number,
 	spendingPerYear: number
 ): Data {
-	console.table({
-	startingAge,
-	startingBalance,
-	interestRate,
-	retirementAge,
-	startingInvestmentPerMonth,
-	investmentIncreasingRate,
-	spendingPerYear
-	});
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
 	const monthlyInterestRate = interestRate / 12;
+	const monthlySpending = spendingPerYear / 12;
 	const data: Data = [];
 	const pushData = () => data.push({ year: currentAge, value: currentBalance });
-	while(currentAge < retirementAge) {
+	while(currentAge < maxAge && currentBalance > 0) {
 		pushData();
-		currentAge += 1;
 		for(let i = 0; i < 12; i++) {
-			currentBalance += currentInvestmentPerMonth;
+			currentBalance += currentAge < retirementAge ?  currentInvestmentPerMonth : -monthlySpending;
 			currentBalance *= 1 + monthlyInterestRate;
 		};
 		currentInvestmentPerMonth *= 1 + investmentIncreasingRate;
-	}
-	while(currentAge < MAX_AGE && currentBalance > 0) {
-		pushData();
 		currentAge += 1;
 	}
 	return data;
 }
 
-const NumberInput: Component<NumberInputProps> = props => <>
-		<label>{ props.name }</label>
-		<input
-			type="number"
-			value={props.value}
-			class={styles.number_input}
-			ref={props.ref}
-		/>
-	</>
 
 const App: Component = () => {
 	const [data, setData] = createSignal<Data>([]);
@@ -72,6 +52,7 @@ const App: Component = () => {
 	let startingBalanceInput: HTMLInputElement | undefined;
 	let interestRateInput: HTMLInputElement | undefined;
 	let retirementAgeInput: HTMLInputElement | undefined;
+	let maxAgeInput: HTMLInputElement | undefined;
 	let startingInvestmentPerMonthInput: HTMLInputElement | undefined;
 	let investmentIncreasingRateInput: HTMLInputElement | undefined;
 	let spendingPerYearInput: HTMLInputElement | undefined;
@@ -81,12 +62,39 @@ const App: Component = () => {
 			startingBalanceInput!.valueAsNumber,
 			interestRateInput!.valueAsNumber,
 			retirementAgeInput!.valueAsNumber,
+			maxAgeInput!.valueAsNumber,
 			startingInvestmentPerMonthInput!.valueAsNumber,
 			investmentIncreasingRateInput!.valueAsNumber,
 			spendingPerYearInput!.valueAsNumber,
 		));
 	}
-	onMount(updateData);
+	onMount(() => {
+		Chart.register(Title, Tooltip, Legend, Colors);
+		updateData();
+	});
+	const chartData = () => ({
+		labels: data().map(({ year }) => year),
+		datasets: [
+			{
+				label: 'Retirement Fund',
+				data: data().map(({ value }) => value),
+			},
+		],
+	});
+	const chartOptions = {
+		responsive: true,
+		maintainAspectRatio: true,
+	};
+	const NumberInput: Component<NumberInputProps> = props => <>
+			<label>{ props.name }</label>
+			<input
+				type="number"
+				value={props.value}
+				class={styles.number_input}
+				ref={props.ref}
+				onChange={updateData}
+			/>
+		</>;
 	createEffect(() => console.log(data()));
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
@@ -95,10 +103,12 @@ const App: Component = () => {
 			<NumberInput name="Starting Balance:"              value={10000}   ref={startingBalanceInput} />
 			<NumberInput name="Interest Rate:"                 value={0.10}    ref={interestRateInput} />
 			<NumberInput name="Retirement Age:"                value={60}      ref={retirementAgeInput} />
+			<NumberInput name="Max Age:"                       value={120}     ref={maxAgeInput} />
 			<NumberInput name="Starting Investment Per Month:" value={500}     ref={startingInvestmentPerMonthInput} />
 			<NumberInput name="Investment Increasing Rate:"    value={0.01}    ref={investmentIncreasingRateInput} />
 			<NumberInput name="Spending Per Year Input:"       value={100_000} ref={spendingPerYearInput} />
 		</div>
+		<Line data={chartData()} options={chartOptions} width={3} height={1} />
 	</div>;
 };
 
