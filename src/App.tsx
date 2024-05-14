@@ -33,8 +33,11 @@ function calculateData(
 	const monthlySpending = spendingPerYear / 12;
 	const data: Data = [];
 	const pushData = () => data.push({ year: currentAge, value: currentBalance });
-	while(currentAge < maxAge && currentBalance > 0) {
+	while(currentAge < maxAge) {
 		pushData();
+		if(currentBalance < 0) {
+			break;
+		}
 		for(let i = 0; i < 12; i++) {
 			currentBalance += currentAge < retirementAge ?  currentInvestmentPerMonth : -monthlySpending;
 			currentBalance *= 1 + monthlyInterestRate;
@@ -84,6 +87,9 @@ const App: Component = () => {
 	const chartOptions = {
 		responsive: true,
 		maintainAspectRatio: true,
+		animation: {
+			duration: 0,
+		},
 	};
 	const NumberInput: Component<NumberInputProps> = props => <>
 			<label>{ props.name }</label>
@@ -100,7 +106,7 @@ const App: Component = () => {
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
 			<NumberInput name="Starting age:"                  value={22}      ref={startingAgeInput} />
-			<NumberInput name="Starting Balance:"              value={10000}   ref={startingBalanceInput} />
+			<NumberInput name="Starting Balance:"              value={0}       ref={startingBalanceInput} />
 			<NumberInput name="Interest Rate:"                 value={0.10}    ref={interestRateInput} />
 			<NumberInput name="Retirement Age:"                value={60}      ref={retirementAgeInput} />
 			<NumberInput name="Max Age:"                       value={120}     ref={maxAgeInput} />
