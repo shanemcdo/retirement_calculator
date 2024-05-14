@@ -1,6 +1,6 @@
 import type { Component, Ref } from 'solid-js';
 
-import { createSignal, createEffect, onMount } from 'solid-js';
+import { createSignal, onMount } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import styles from './App.module.css';
@@ -73,6 +73,7 @@ const App: Component = () => {
 	}
 	onMount(() => {
 		Chart.register(Title, Tooltip, Legend, Colors);
+		Chart.defaults.font.family = '"Josefin Sans", sans-serif';
 		updateData();
 	});
 	const chartData = () => ({
@@ -101,7 +102,6 @@ const App: Component = () => {
 				onChange={updateData}
 			/>
 		</>;
-	createEffect(() => console.log(data()));
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
