@@ -93,7 +93,7 @@ const App: Component = () => {
 		},
 	};
 	const NumberInput: Component<NumberInputProps> = props => <>
-			<label>{ props.name }</label>
+			<label>{ props.name }:</label>
 			<input
 				type="number"
 				value={props.value}
@@ -105,14 +105,14 @@ const App: Component = () => {
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age:"                  value={22}      ref={startingAgeInput} />
-			<NumberInput name="Starting Balance:"              value={0}       ref={startingBalanceInput} />
-			<NumberInput name="Interest Rate:"                 value={0.10}    ref={interestRateInput} />
-			<NumberInput name="Retirement Age:"                value={50}      ref={retirementAgeInput} />
-			<NumberInput name="Max Age:"                       value={120}     ref={maxAgeInput} />
-			<NumberInput name="Starting Investment Per Month:" value={500}     ref={startingInvestmentPerMonthInput} />
-			<NumberInput name="Investment Increasing Rate:"    value={0.01}    ref={investmentIncreasingRateInput} />
-			<NumberInput name="Spending Per Year Input:"       value={100_000} ref={spendingPerYearInput} />
+			<NumberInput name="Starting age"                  value={22}      ref={startingAgeInput} />
+			<NumberInput name="Starting Balance"              value={0}       ref={startingBalanceInput} />
+			<NumberInput name="Interest Rate"                 value={0.10}    ref={interestRateInput} />
+			<NumberInput name="Retirement Age"                value={50}      ref={retirementAgeInput} />
+			<NumberInput name="Max Age"                       value={120}     ref={maxAgeInput} />
+			<NumberInput name="Starting Investment Per Month" value={500}     ref={startingInvestmentPerMonthInput} />
+			<NumberInput name="Investment Increasing Rate"    value={0.01}    ref={investmentIncreasingRateInput} />
+			<NumberInput name="Spending Per Year Input"       value={100_000} ref={spendingPerYearInput} />
 		</div>
 		<Line data={chartData()} options={chartOptions} width={3} height={1} />
 	</div>;
