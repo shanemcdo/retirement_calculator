@@ -1,6 +1,6 @@
 import type { Component, Ref } from 'solid-js';
 
-import { createSignal, onMount } from 'solid-js';
+import { createSignal, onMount, createUniqueId } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import styles from './App.module.css';
@@ -11,7 +11,7 @@ type Data = {
 }[];
 
 type NumberInputProps = {
-	value: number,
+	defaultValue: number,
 	name: string,
 	ref: Ref<HTMLInputElement>
 };
@@ -50,6 +50,7 @@ function calculateData(
 
 
 const App: Component = () => {
+	const url = new URL(window.location.toString());
 	const [data, setData] = createSignal<Data>([]);
 	let startingAgeInput: HTMLInputElement | undefined;
 	let startingBalanceInput: HTMLInputElement | undefined;
@@ -92,27 +93,40 @@ const App: Component = () => {
 			duration: 0,
 		},
 	};
-	const NumberInput: Component<NumberInputProps> = props => <>
-			<label>{ props.name }:</label>
+	const NumberInput: Component<NumberInputProps> = props => {
+		const id = createUniqueId();
+		return <>
+			<label for={id} >{ props.name }:</label>
 			<input
 				type="number"
-				value={props.value}
+				value={url.searchParams.get(props.name) ?? props.defaultValue}
 				class={styles.number_input}
 				ref={props.ref}
-				onChange={updateData}
+				id={id}
+				onChange={(e) => {
+					if(e.target.valueAsNumber === props.defaultValue) {
+						url.searchParams.delete(props.name);
+					} else {
+						url.searchParams.set(props.name, e.target.value);
+					}
+					const newurl = url.toString();
+					window.history.pushState({ path: newurl },'',newurl);
+					updateData();
+				}}
 			/>
 		</>;
+	}
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age"                  value={22}      ref={startingAgeInput} />
-			<NumberInput name="Starting Balance"              value={0}       ref={startingBalanceInput} />
-			<NumberInput name="Interest Rate"                 value={0.10}    ref={interestRateInput} />
-			<NumberInput name="Retirement Age"                value={50}      ref={retirementAgeInput} />
-			<NumberInput name="Max Age"                       value={120}     ref={maxAgeInput} />
-			<NumberInput name="Starting Investment Per Month" value={500}     ref={startingInvestmentPerMonthInput} />
-			<NumberInput name="Investment Increasing Rate"    value={0.01}    ref={investmentIncreasingRateInput} />
-			<NumberInput name="Spending Per Year Input"       value={100_000} ref={spendingPerYearInput} />
+			<NumberInput name="Starting age"                  defaultValue={22}      ref={startingAgeInput} />
+			<NumberInput name="Starting Balance"              defaultValue={0}       ref={startingBalanceInput} />
+			<NumberInput name="Interest Rate"                 defaultValue={0.10}    ref={interestRateInput} />
+			<NumberInput name="Retirement Age"                defaultValue={50}      ref={retirementAgeInput} />
+			<NumberInput name="Max Age"                       defaultValue={120}     ref={maxAgeInput} />
+			<NumberInput name="Starting Investment Per Month" defaultValue={500}     ref={startingInvestmentPerMonthInput} />
+			<NumberInput name="Investment Increasing Rate"    defaultValue={0.01}    ref={investmentIncreasingRateInput} />
+			<NumberInput name="Spending Per Year Input"       defaultValue={100_000} ref={spendingPerYearInput} />
 		</div>
 		<Line data={chartData()} options={chartOptions} width={3} height={1} />
 	</div>;
