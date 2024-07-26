@@ -8,6 +8,8 @@ import styles from './App.module.css';
 type Data = {
 	year: number,
 	value: number,
+	principal: number,
+	interest: number
 }[];
 
 type NumberInputProps = {
@@ -29,17 +31,30 @@ function calculateData(
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
+	let principal = startingBalance;
+	let interest = 0;
 	const monthlyInterestRate = interestRate / 12;
 	const monthlySpending = spendingPerYear / 12;
 	const data: Data = [];
-	const pushData = () => data.push({ year: currentAge, value: currentBalance });
+	const pushData = () => data.push({
+		year: currentAge,
+		value: currentBalance,
+		principal,
+		interest
+	});
 	while(currentAge < maxAge) {
 		pushData();
 		if(currentBalance < 0) {
 			break;
 		}
 		for(let i = 0; i < 12; i++) {
-			currentBalance += currentAge < retirementAge ?  currentInvestmentPerMonth : -monthlySpending;
+			if(currentAge < retirementAge) {
+				principal += currentInvestmentPerMonth;
+				currentBalance += currentInvestmentPerMonth;
+			} else {
+				currentBalance -= monthlySpending;
+			}
+			interest += currentBalance * monthlyInterestRate;
 			currentBalance *= 1 + monthlyInterestRate;
 		};
 		currentInvestmentPerMonth *= 1 + investmentIncreasingRate;
@@ -83,6 +98,14 @@ const App: Component = () => {
 			{
 				label: 'Retirement Fund',
 				data: data().map(({ value }) => value),
+			},
+			{
+				label: 'Principal',
+				data: data().map(({ principal }) => principal),
+			},
+			{
+				label: 'Interest',
+				data: data().map(({ interest }) => interest),
 			},
 		],
 	});
