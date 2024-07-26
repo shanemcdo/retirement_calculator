@@ -122,6 +122,9 @@ const App: Component = () => {
 		animation: {
 			duration: 0,
 		},
+		scales: {
+			y: { min: 0 }
+		}
 	};
 	const NumberInput: Component<NumberInputProps> = props => {
 		const id = createUniqueId();
