@@ -9,7 +9,8 @@ type Data = {
 	year: number,
 	value: number,
 	principal: number,
-	interest: number
+	interest: number,
+	spending: number
 }[];
 
 type NumberInputProps = {
@@ -33,6 +34,7 @@ function calculateData(
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
 	let principal = startingBalance;
 	let interest = 0;
+	let spending = 0;
 	const monthlyInterestRate = interestRate / 12;
 	const monthlySpending = spendingPerYear / 12;
 	const data: Data = [];
@@ -40,7 +42,8 @@ function calculateData(
 		year: currentAge,
 		value: currentBalance,
 		principal,
-		interest
+		interest,
+		spending
 	});
 	while(currentAge < maxAge) {
 		pushData();
@@ -52,6 +55,7 @@ function calculateData(
 				principal += currentInvestmentPerMonth;
 				currentBalance += currentInvestmentPerMonth;
 			} else {
+				spending += monthlySpending;
 				currentBalance -= monthlySpending;
 			}
 			interest += currentBalance * monthlyInterestRate;
@@ -106,6 +110,10 @@ const App: Component = () => {
 			{
 				label: 'Interest',
 				data: data().map(({ interest }) => interest),
+			},
+			{
+				label: 'Spending',
+				data: data().map(({ spending }) => spending),
 			},
 		],
 	});
