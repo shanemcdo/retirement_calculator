@@ -38,15 +38,14 @@ function calculateData(
 	const monthlyInterestRate = interestRate / 12;
 	const monthlySpending = spendingPerYear / 12;
 	const data: Data = [];
-	const pushData = () => data.push({
-		year: currentAge,
-		value: currentBalance,
-		principal,
-		interest,
-		spending
-	});
 	while(currentAge < maxAge) {
-		pushData();
+		data.push({
+			year: currentAge,
+			value: currentBalance,
+			principal,
+			interest,
+			spending
+		});
 		if(currentBalance < 0) {
 			break;
 		}
