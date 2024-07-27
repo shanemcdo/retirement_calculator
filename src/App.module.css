@@ -7,6 +7,8 @@
 	h1 {
 		margin: 0;
 	}
+	display: flex;
+	flex-flow: column;
 }
 
 .grid {
@@ -21,4 +23,11 @@
 
 .number_input {
 	font-family: "Josefin Sans", sans-serif;
+}
+
+.chart_container {
+	flex: 1 1 auto;
+	canvas {
+		max-height: 100%;
+	}
 }

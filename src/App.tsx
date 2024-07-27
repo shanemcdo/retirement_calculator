@@ -118,7 +118,7 @@ const App: Component = () => {
 	});
 	const chartOptions = {
 		responsive: true,
-		maintainAspectRatio: true,
+		maintainAspectRatio: false,
 		animation: {
 			duration: 0,
 		},
@@ -161,7 +161,9 @@ const App: Component = () => {
 			<NumberInput name="Investment Increasing Rate"    defaultValue={0.01}    ref={investmentIncreasingRateInput} />
 			<NumberInput name="Spending Per Year Input"       defaultValue={100_000} ref={spendingPerYearInput} />
 		</div>
-		<Line data={chartData()} options={chartOptions} width={3} height={1} />
+		<div class={styles.chart_container} >
+			<Line data={chartData()} options={chartOptions} />
+		</div>
 	</div>;
 };
 
