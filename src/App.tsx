@@ -22,11 +22,11 @@ type NumberInputProps = {
 function calculateData(
 	startingAge: number,
 	startingBalance: number,
-	interestRate: number,
+	interestRatePercent: number,
 	retirementAge: number,
 	maxAge: number,
 	startingInvestmentPerMonth: number,
-	investmentIncreasingRate: number,
+	investmentIncreasingRatePercent: number,
 	spendingPerYear: number
 ): Data {
 	let currentAge = startingAge;
@@ -35,7 +35,7 @@ function calculateData(
 	let principal = startingBalance;
 	let interest = 0;
 	let spending = 0;
-	const monthlyInterestRate = interestRate / 12;
+	const monthlyInterestRate = interestRatePercent / 100 / 12;
 	const monthlySpending = spendingPerYear / 12;
 	const data: Data = [];
 	while(currentAge < maxAge) {
@@ -60,7 +60,7 @@ function calculateData(
 			interest += currentBalance * monthlyInterestRate;
 			currentBalance *= 1 + monthlyInterestRate;
 		};
-		currentInvestmentPerMonth *= 1 + investmentIncreasingRate;
+		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent;
 		currentAge += 1;
 	}
 	return data;
@@ -152,14 +152,14 @@ const App: Component = () => {
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age"                  defaultValue={22}      ref={startingAgeInput} />
-			<NumberInput name="Starting Balance"              defaultValue={0}       ref={startingBalanceInput} />
-			<NumberInput name="Interest Rate"                 defaultValue={0.10}    ref={interestRateInput} />
-			<NumberInput name="Retirement Age"                defaultValue={50}      ref={retirementAgeInput} />
-			<NumberInput name="Max Age"                       defaultValue={120}     ref={maxAgeInput} />
-			<NumberInput name="Starting Investment Per Month" defaultValue={500}     ref={startingInvestmentPerMonthInput} />
-			<NumberInput name="Investment Increasing Rate"    defaultValue={0.01}    ref={investmentIncreasingRateInput} />
-			<NumberInput name="Spending Per Year Input"       defaultValue={100_000} ref={spendingPerYearInput} />
+			<NumberInput name="Starting age"                   defaultValue={22}      ref={startingAgeInput} />
+			<NumberInput name="Starting Balance"               defaultValue={0}       ref={startingBalanceInput} />
+			<NumberInput name="Interest Rate (%)"              defaultValue={10}      ref={interestRateInput} />
+			<NumberInput name="Retirement Age"                 defaultValue={50}      ref={retirementAgeInput} />
+			<NumberInput name="Max Age"                        defaultValue={120}     ref={maxAgeInput} />
+			<NumberInput name="Starting Investment Per Month"  defaultValue={500}     ref={startingInvestmentPerMonthInput} />
+			<NumberInput name="Investment Increasing Rate (%)" defaultValue={1}    ref={investmentIncreasingRateInput} />
+			<NumberInput name="Spending Per Year Input"        defaultValue={100_000} ref={spendingPerYearInput} />
 		</div>
 		<div class={styles.chart_container} >
 			<Line data={chartData()} options={chartOptions} />
