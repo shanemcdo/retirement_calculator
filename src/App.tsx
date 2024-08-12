@@ -60,7 +60,7 @@ function calculateData(
 			interest += currentBalance * monthlyInterestRate;
 			currentBalance *= 1 + monthlyInterestRate;
 		};
-		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent;
+		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent / 100;
 		currentAge += 1;
 	}
 	return data;
