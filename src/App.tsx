@@ -82,6 +82,7 @@ const App: Component = () => {
 	let startingInvestmentPerMonthInput: HTMLInputElement | undefined;
 	let investmentIncreasingRateInput: HTMLInputElement | undefined;
 	let spendingPerYearInput: HTMLInputElement | undefined;
+	let hiddenDatasets: boolean[] = [];
 	const updateData = () => {
 		setData(calculateData(
 			startingAgeInput!.valueAsNumber,
@@ -97,6 +98,15 @@ const App: Component = () => {
 	onMount(() => {
 		Chart.register(Title, Tooltip, Legend, Colors);
 		Chart.defaults.font.family = '"Josefin Sans", sans-serif';
+		document.addEventListener('click', () => {
+			setTimeout(() =>{
+				const chart = Chart.getChart(document.querySelector('canvas')!)!;
+				console.log(chart.legend);
+				hiddenDatasets = chart?.legend?.legendItems?.map(({ hidden }) => hidden ?? false) ?? []
+				console.log(hiddenDatasets);
+				console.log(chart);
+			}, 100);
+		});
 		updateData();
 	});
 	const chartData = () => ({
@@ -105,22 +115,27 @@ const App: Component = () => {
 			{
 				label: 'Retirement Fund',
 				data: data().map(({ value }) => value),
+				hidden: hiddenDatasets[0] ?? false,
 			},
 			{
 				label: 'Principal',
 				data: data().map(({ principal }) => principal),
+				hidden: hiddenDatasets[1] ?? false,
 			},
 			{
 				label: 'Interest Per Year',
 				data: data().map(({ interestPerYear }) => interestPerYear),
+				hidden: hiddenDatasets[2] ?? false,
 			},
 			{
 				label: 'Total Interest',
 				data: data().map(({ totalInterest }) => totalInterest),
+				hidden: hiddenDatasets[3] ?? false,
 			},
 			{
 				label: 'Spending',
 				data: data().map(({ spending }) => spending),
+				hidden: hiddenDatasets[4] ?? false,
 			},
 		],
 	});
@@ -168,11 +183,16 @@ const App: Component = () => {
 			<NumberInput name="Retirement Age"                 defaultValue={50}      ref={retirementAgeInput} />
 			<NumberInput name="Max Age"                        defaultValue={120}     ref={maxAgeInput} />
 			<NumberInput name="Starting Investment Per Month"  defaultValue={500}     ref={startingInvestmentPerMonthInput} />
-			<NumberInput name="Investment Increasing Rate (%)" defaultValue={1}    ref={investmentIncreasingRateInput} />
+			<NumberInput name="Investment Increasing Rate (%)" defaultValue={1}       ref={investmentIncreasingRateInput} />
 			<NumberInput name="Spending Per Year Input"        defaultValue={100_000} ref={spendingPerYearInput} />
 		</div>
 		<div class={styles.chart_container} >
-			<Line data={chartData()} options={chartOptions} />
+			<Line
+				data={chartData()}
+				options={chartOptions}
+				onclick={() => {
+				}}
+			/>
 		</div>
 	</div>;
 };
