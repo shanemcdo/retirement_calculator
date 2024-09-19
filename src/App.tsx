@@ -9,8 +9,9 @@ type Data = {
 	year: number,
 	value: number,
 	principal: number,
-	interest: number,
-	spending: number
+	totalInterest: number,
+	spending: number,
+	interestPerYear: number,
 }[];
 
 type NumberInputProps = {
@@ -33,7 +34,8 @@ function calculateData(
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
 	let principal = startingBalance;
-	let interest = 0;
+	let interestPerYear = 0;
+	let totalInterest = 0;
 	let spending = 0;
 	const monthlyInterestRate = interestRatePercent / 100 / 12;
 	const monthlySpending = spendingPerYear / 12;
@@ -43,8 +45,9 @@ function calculateData(
 			year: currentAge,
 			value: currentBalance,
 			principal,
-			interest,
-			spending
+			totalInterest,
+			spending,
+			interestPerYear,
 		});
 		if(currentBalance < 0) {
 			break;
@@ -57,7 +60,8 @@ function calculateData(
 				spending += monthlySpending;
 				currentBalance -= monthlySpending;
 			}
-			interest += currentBalance * monthlyInterestRate;
+			interestPerYear = currentBalance * monthlyInterestRate;
+			totalInterest += interestPerYear;
 			currentBalance *= 1 + monthlyInterestRate;
 		};
 		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent / 100;
@@ -107,8 +111,12 @@ const App: Component = () => {
 				data: data().map(({ principal }) => principal),
 			},
 			{
-				label: 'Interest',
-				data: data().map(({ interest }) => interest),
+				label: 'Interest Per Year',
+				data: data().map(({ interestPerYear }) => interestPerYear),
+			},
+			{
+				label: 'Total Interest',
+				data: data().map(({ totalInterest }) => totalInterest),
 			},
 			{
 				label: 'Spending',
@@ -123,8 +131,10 @@ const App: Component = () => {
 			duration: 0,
 		},
 		scales: {
-			y: { min: 0 }
-		}
+			y: { 
+				min: 0,
+			},
+		},
 	};
 	const NumberInput: Component<NumberInputProps> = props => {
 		const id = createUniqueId();
