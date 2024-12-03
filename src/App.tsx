@@ -71,25 +71,29 @@ function calculateData(
 	return data;
 }
 
+function getURL(): URL {
+	return new URL(window.location.toString());
+}
+
 function updateURL(newurl: URL) {
 	const urlstring = newurl.toString();
 	window.history.pushState({ path: urlstring },'',urlstring);
 }
 
-function addURLParam(name: string, value: string) {
-	const url = new URL(window.location.toString());
+function setURLParam(name: string, value: string) {
+	const url = getURL();
 	url.searchParams.set(name, value);
 	updateURL(url);
 }
 
-function removeURLParam(name: string) {
-	const url = new URL(window.location.toString());
+function deleteURLParam(name: string) {
+	const url = getURL();
 	url.searchParams.delete(name);
 	updateURL(url);
 }
 
 function getURLParam(name: string): string | null {
-	const url = new URL(window.location.toString());
+	const url = getURL();
 	return url.searchParams.get(name);
 }
 
@@ -105,9 +109,9 @@ const NumberInput: Component<NumberInputProps> = props => {
 			id={id}
 			onChange={(e) => {
 				if(e.target.valueAsNumber === props.defaultValue) {
-					removeURLParam(props.name);
+					deleteURLParam(props.name);
 				} else {
-					addURLParam(props.name, e.target.value);
+					setURLParam(props.name, e.target.value);
 				}
 				props.updateData();
 			}}
