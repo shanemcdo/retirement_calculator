@@ -17,7 +17,8 @@ type Data = {
 type NumberInputProps = {
 	defaultValue: number,
 	name: string,
-	ref: Ref<HTMLInputElement>
+	ref: Ref<HTMLInputElement>,
+	updateData: () => void,
 };
 
 function calculateData(
@@ -70,6 +71,49 @@ function calculateData(
 	return data;
 }
 
+function updateURL(newurl: URL) {
+	const urlstring = newurl.toString();
+	window.history.pushState({ path: urlstring },'',urlstring);
+}
+
+function addURLParam(name: string, value: string) {
+	const url = new URL(window.location.toString());
+	url.searchParams.set(name, value);
+	updateURL(url);
+}
+
+function removeURLParam(name: string) {
+	const url = new URL(window.location.toString());
+	url.searchParams.delete(name);
+	updateURL(url);
+}
+
+function getURLParam(name: string): string | null {
+	const url = new URL(window.location.toString());
+	return url.searchParams.get(name);
+}
+
+const NumberInput: Component<NumberInputProps> = props => {
+	const id = createUniqueId();
+	return <>
+		<label for={id} >{ props.name }:</label>
+		<input
+			type="number"
+			value={getURLParam(props.name) ?? props.defaultValue}
+			class={styles.number_input}
+			ref={props.ref}
+			id={id}
+			onChange={(e) => {
+				if(e.target.valueAsNumber === props.defaultValue) {
+					removeURLParam(props.name);
+				} else {
+					addURLParam(props.name, e.target.value);
+				}
+				props.updateData();
+			}}
+		/>
+	</>;
+}
 
 const App: Component = () => {
 	const url = new URL(window.location.toString());
@@ -101,10 +145,7 @@ const App: Component = () => {
 		document.addEventListener('click', () => {
 			setTimeout(() =>{
 				const chart = Chart.getChart(document.querySelector('canvas')!)!;
-				console.log(chart.legend);
 				hiddenDatasets = chart?.legend?.legendItems?.map(({ hidden }) => hidden ?? false) ?? []
-				console.log(hiddenDatasets);
-				console.log(chart);
 			}, 100);
 		});
 		updateData();
@@ -151,40 +192,17 @@ const App: Component = () => {
 			},
 		},
 	};
-	const NumberInput: Component<NumberInputProps> = props => {
-		const id = createUniqueId();
-		return <>
-			<label for={id} >{ props.name }:</label>
-			<input
-				type="number"
-				value={url.searchParams.get(props.name) ?? props.defaultValue}
-				class={styles.number_input}
-				ref={props.ref}
-				id={id}
-				onChange={(e) => {
-					if(e.target.valueAsNumber === props.defaultValue) {
-						url.searchParams.delete(props.name);
-					} else {
-						url.searchParams.set(props.name, e.target.value);
-					}
-					const newurl = url.toString();
-					window.history.pushState({ path: newurl },'',newurl);
-					updateData();
-				}}
-			/>
-		</>;
-	}
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age"                   defaultValue={22}      ref={startingAgeInput} />
-			<NumberInput name="Starting Balance"               defaultValue={0}       ref={startingBalanceInput} />
-			<NumberInput name="Interest Rate (%)"              defaultValue={10}      ref={interestRateInput} />
-			<NumberInput name="Retirement Age"                 defaultValue={50}      ref={retirementAgeInput} />
-			<NumberInput name="Max Age"                        defaultValue={120}     ref={maxAgeInput} />
-			<NumberInput name="Starting Investment Per Month"  defaultValue={500}     ref={startingInvestmentPerMonthInput} />
-			<NumberInput name="Investment Increasing Rate (%)" defaultValue={1}       ref={investmentIncreasingRateInput} />
-			<NumberInput name="Spending Per Year Input"        defaultValue={100_000} ref={spendingPerYearInput} />
+			<NumberInput name="Starting age"                   defaultValue={22}      ref={startingAgeInput}                updateData={updateData} />
+			<NumberInput name="Starting Balance"               defaultValue={0}       ref={startingBalanceInput}            updateData={updateData} />
+			<NumberInput name="Interest Rate (%)"              defaultValue={10}      ref={interestRateInput}               updateData={updateData} />
+			<NumberInput name="Retirement Age"                 defaultValue={50}      ref={retirementAgeInput}              updateData={updateData} />
+			<NumberInput name="Max Age"                        defaultValue={120}     ref={maxAgeInput}                     updateData={updateData} />
+			<NumberInput name="Starting Investment Per Month"  defaultValue={500}     ref={startingInvestmentPerMonthInput} updateData={updateData} />
+			<NumberInput name="Investment Increasing Rate (%)" defaultValue={1}       ref={investmentIncreasingRateInput}   updateData={updateData} />
+			<NumberInput name="Spending Per Year Input"        defaultValue={100_000} ref={spendingPerYearInput}            updateData={updateData} />
 		</div>
 		<div class={styles.chart_container} >
 			<Line
