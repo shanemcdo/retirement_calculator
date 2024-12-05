@@ -81,6 +81,10 @@ function updateURL(newurl: URL) {
 }
 
 function setURLParam(name: string, value: string) {
+	if(value === '') {
+		deleteURLParam(name);
+		return;
+	}
 	const url = getURL();
 	url.searchParams.set(name, value);
 	updateURL(url);
