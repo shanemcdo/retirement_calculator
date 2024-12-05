@@ -164,7 +164,7 @@ const NumberInput: Component<NumberInputProps> = props => {
 	const [value, setValue] = props.valueSignal;
 	const param = getURLParam(props.name);
 	if(param !== null) {
-		setValue(parseInt(param));
+		setValue(parseFloat(param));
 	}
 	createEffect(() => {
 		if(props.defaultValue === value()) {
@@ -309,7 +309,7 @@ const App: Component = () => {
 			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                        />
 			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                        />
 			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}              disabled={useSafeWithdrawlRate()} />
-			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                         /> 
+			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                          />
 			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}                         />
 			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}   step={0.5}                        />
 			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}            step={1000}                       />
