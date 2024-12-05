@@ -95,7 +95,7 @@ function calculateRetirementAge(
 			if(currentBalance < requiredNestEgg) {
 				currentBalance += currentInvestmentPerMonth;
 			} else {
-				return currentAge;
+				return currentAge + 1;
 			}
 			currentBalance *= 1 + monthlyInterestRate;
 		};
@@ -236,13 +236,13 @@ const App: Component = () => {
 	createEffect(() => {
 		if(useSafeWithdrawlRate()) {
 			inputSignals.retirementAge[1](calculateRetirementAge(
-				untrack(inputSignals.startingAge[0]),
-				untrack(inputSignals.startingBalance[0]),
-				untrack(inputSignals.interestRate[0]),
-				untrack(inputSignals.maxAge[0]),
-				untrack(inputSignals.startingInvestmentPerMonth[0]),
-				untrack(inputSignals.investmentIncreasingRate[0]),
-				untrack(inputSignals.spendingPerYear[0]),
+				inputSignals.startingAge[0](),
+				inputSignals.startingBalance[0](),
+				inputSignals.interestRate[0](),
+				inputSignals.maxAge[0](),
+				inputSignals.startingInvestmentPerMonth[0](),
+				inputSignals.investmentIncreasingRate[0](),
+				inputSignals.spendingPerYear[0](),
 				inputSignals.safeWithdrawlRate[0](),
 			))
 		}
