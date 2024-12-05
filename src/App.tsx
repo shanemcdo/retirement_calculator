@@ -115,7 +115,6 @@ function addHiddenDatasetsURLParam(hiddenDatasets: boolean[]) {
 
 function getHiddenDatasetsFromURLParam(): boolean[] {
 	const result: boolean[] = [];
-	console.log( getURLParam('hiddenDatasets'));
 	getURLParam('hiddenDatasets')
 		?.split(',')
 		.map(x => parseInt(x))
@@ -158,7 +157,6 @@ const App: Component = () => {
 	let investmentIncreasingRateInput: HTMLInputElement | undefined;
 	let spendingPerYearInput: HTMLInputElement | undefined;
 	let hiddenDatasets = getHiddenDatasetsFromURLParam();
-	console.log(hiddenDatasets);
 	const updateData = () => {
 		setData(calculateData(
 			startingAgeInput!.valueAsNumber,
@@ -177,7 +175,6 @@ const App: Component = () => {
 		document.addEventListener('click', () => {
 			setTimeout(() =>{
 				const chart = Chart.getChart(document.querySelector('canvas')!)!;
-				console.log(chart)
 				hiddenDatasets = chart?.legend?.legendItems?.map(({ hidden }) => hidden ?? false) ?? []
 				addHiddenDatasetsURLParam(hiddenDatasets);
 			}, 100);
