@@ -1,6 +1,6 @@
 import type { Component, Ref } from 'solid-js';
 
-import { createSignal, onMount, createUniqueId } from 'solid-js';
+import { createSignal, onMount, createUniqueId, Show, createEffect } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import styles from './App.module.css';
@@ -19,6 +19,7 @@ type NumberInputProps = {
 	name: string,
 	ref: Ref<HTMLInputElement>,
 	updateData: () => void,
+	disabled?: boolean,
 };
 
 function calculateData(
@@ -29,7 +30,7 @@ function calculateData(
 	maxAge: number,
 	startingInvestmentPerMonth: number,
 	investmentIncreasingRatePercent: number,
-	spendingPerYear: number
+	spendingPerYear: number,
 ): Data {
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
@@ -71,6 +72,39 @@ function calculateData(
 	return data;
 }
 
+function calculateRetirementAge(
+	startingAge: number,
+	startingBalance: number,
+	interestRatePercent: number,
+	maxAge: number,
+	startingInvestmentPerMonth: number,
+	investmentIncreasingRatePercent: number,
+	spendingPerYear: number,
+	safeWithdrawlRate: number,
+): number {
+	let currentAge = startingAge;
+	let currentBalance = startingBalance;
+	let currentInvestmentPerMonth = startingInvestmentPerMonth;
+	const monthlyInterestRate = interestRatePercent / 100 / 12;
+	const requiredNestEgg = spendingPerYear / safeWithdrawlRate * 100;
+	while(currentAge <= maxAge) {
+		if(currentBalance < 0) {
+			break;
+		}
+		for(let i = 0; i < 12; i++) {
+			if(currentBalance < requiredNestEgg) {
+				currentBalance += currentInvestmentPerMonth;
+			} else {
+				return currentAge;
+			}
+			currentBalance *= 1 + monthlyInterestRate;
+		};
+		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent / 100;
+		currentAge += 1;
+	}
+	return currentAge;
+}
+
 function getURL(): URL {
 	return new URL(window.location.toString());
 }
@@ -100,6 +134,7 @@ function getURLParam(name: string): string | null {
 	const url = getURL();
 	return url.searchParams.get(name);
 }
+
 function addHiddenDatasetsURLParam(hiddenDatasets: boolean[]) {
 	let result = '';
 	for(let i = 0; i < hiddenDatasets.length; i++) {
@@ -134,6 +169,7 @@ const NumberInput: Component<NumberInputProps> = props => {
 			class={styles.number_input}
 			ref={props.ref}
 			id={id}
+			disabled={props.disabled ?? false}
 			onChange={(e) => {
 				if(e.target.valueAsNumber === props.defaultValue) {
 					deleteURLParam(props.name);
@@ -156,8 +192,19 @@ const App: Component = () => {
 	let startingInvestmentPerMonthInput: HTMLInputElement | undefined;
 	let investmentIncreasingRateInput: HTMLInputElement | undefined;
 	let spendingPerYearInput: HTMLInputElement | undefined;
+	let safeWithdrawlRateInput: HTMLInputElement | undefined;
 	let hiddenDatasets = getHiddenDatasetsFromURLParam();
-	const updateData = () => {
+	const [useSafeWithdrawlRate, setUseSafeWithdrawlRate] = createSignal(getURLParam('useSafeWithdrawlRate') !== null);
+	const toggleUseSafeWithdrawlRate = () => setUseSafeWithdrawlRate(!useSafeWithdrawlRate());
+	createEffect(() => {
+		if(useSafeWithdrawlRate()) {
+			setURLParam('useSafeWithdrawlRate', '0');
+		} else {
+			deleteURLParam('useSafeWithdrawlRate');
+		}
+		updateData();
+	});
+	const updateWithoutSafeWithdrawl = () => {
 		setData(calculateData(
 			startingAgeInput!.valueAsNumber,
 			startingBalanceInput!.valueAsNumber,
@@ -168,7 +215,27 @@ const App: Component = () => {
 			investmentIncreasingRateInput!.valueAsNumber,
 			spendingPerYearInput!.valueAsNumber,
 		));
-	}
+	};
+	const updateWithSafeWithdrawl = () => {
+		retirementAgeInput!.value = calculateRetirementAge(
+			startingAgeInput!.valueAsNumber,
+			startingBalanceInput!.valueAsNumber,
+			interestRateInput!.valueAsNumber,
+			maxAgeInput!.valueAsNumber,
+			startingInvestmentPerMonthInput!.valueAsNumber,
+			investmentIncreasingRateInput!.valueAsNumber,
+			spendingPerYearInput!.valueAsNumber,
+			safeWithdrawlRateInput!.valueAsNumber
+		).toString();
+		retirementAgeInput!.dispatchEvent(new Event('change'));
+	};
+	const updateData = () => {
+		if(useSafeWithdrawlRate()) {
+			updateWithSafeWithdrawl();
+		} else {
+			updateWithoutSafeWithdrawl();
+		}
+	};
 	onMount(() => {
 		Chart.register(Title, Tooltip, Legend, Colors);
 		Chart.defaults.font.family = '"Josefin Sans", sans-serif';
@@ -229,12 +296,23 @@ const App: Component = () => {
 			<NumberInput name="Starting age"                   defaultValue={22}      ref={startingAgeInput}                updateData={updateData} />
 			<NumberInput name="Starting Balance"               defaultValue={0}       ref={startingBalanceInput}            updateData={updateData} />
 			<NumberInput name="Interest Rate (%)"              defaultValue={10}      ref={interestRateInput}               updateData={updateData} />
-			<NumberInput name="Retirement Age"                 defaultValue={50}      ref={retirementAgeInput}              updateData={updateData} />
+			<NumberInput name="Retirement Age"                 defaultValue={50}      ref={retirementAgeInput}              updateData={updateWithoutSafeWithdrawl} disabled={useSafeWithdrawlRate()} />
 			<NumberInput name="Max Age"                        defaultValue={120}     ref={maxAgeInput}                     updateData={updateData} />
 			<NumberInput name="Starting Investment Per Month"  defaultValue={500}     ref={startingInvestmentPerMonthInput} updateData={updateData} />
 			<NumberInput name="Investment Increasing Rate (%)" defaultValue={1}       ref={investmentIncreasingRateInput}   updateData={updateData} />
 			<NumberInput name="Spending Per Year Input"        defaultValue={100_000} ref={spendingPerYearInput}            updateData={updateData} />
+			<Show when={useSafeWithdrawlRate()}>
+				<NumberInput
+					name="Safe Withdrawl Rate (%)"
+					defaultValue={4}
+					ref={safeWithdrawlRateInput}
+					updateData={updateWithSafeWithdrawl}
+				/>
+			</Show>
 		</div>
+			<button
+				onclick={toggleUseSafeWithdrawlRate}
+			>{useSafeWithdrawlRate() ? "Don't Use Safe Withdrawl Rate" : "Use Safe Withdrawl Rate"}</button>
 		<div class={styles.chart_container} >
 			<Line
 				data={chartData()}
