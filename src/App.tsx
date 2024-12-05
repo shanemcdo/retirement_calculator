@@ -106,7 +106,6 @@ function calculateWithdrawlRate(
 	return currentAge;
 }
 
-
 function calculateRetirementAge(
 	startingAge: number,
 	startingBalance: number,
