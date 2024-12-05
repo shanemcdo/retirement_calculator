@@ -10,6 +10,9 @@
 	}
 	display: flex;
 	flex-flow: column;
+	button {
+		margin: 0 10px;
+	}
 }
 
 .grid {

@@ -311,9 +311,13 @@ const App: Component = () => {
 			</Show>
 		</div>
 		<div>
-			<button
-				onclick={toggleUseSafeWithdrawlRate}
-			>{useSafeWithdrawlRate() ? "Don't Use Safe Withdrawl Rate" : "Use Safe Withdrawl Rate"}</button>
+			<input
+				type="checkbox"
+				id="useSafeWithdrawlRate"
+				onclick={e => setUseSafeWithdrawlRate((e.target as HTMLInputElement).checked)}
+				checked={useSafeWithdrawlRate()}
+			/>
+			<label for="useSafeWithdrawlRate">Use Safe Withdrawl Rate</label>
 			<button
 				onclick={() => location.href = './'}
 			>Reset</button>
