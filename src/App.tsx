@@ -1,6 +1,6 @@
 import type { Component, Signal } from 'solid-js';
 
-import { createSignal, onMount, createUniqueId, Show, createEffect, untrack } from 'solid-js';
+import { createSignal, onMount, createUniqueId, createEffect, untrack } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import styles from './App.module.css';
@@ -72,6 +72,41 @@ function calculateData(
 	return data;
 }
 
+function calculateWithdrawlRate(
+	startingAge: number,
+	startingBalance: number,
+	interestRatePercent: number,
+	retirementAge: number,
+	maxAge: number,
+	startingInvestmentPerMonth: number,
+	investmentIncreasingRatePercent: number,
+	spendingPerYear: number,
+): number {
+	let currentAge = startingAge;
+	let currentBalance = startingBalance;
+	let currentInvestmentPerMonth = startingInvestmentPerMonth;
+	const monthlyInterestRate = interestRatePercent / 100 / 12;
+	const monthlySpending = spendingPerYear / 12;
+	while(currentAge <= maxAge) {
+		if(currentBalance < 0) {
+			break;
+		}
+		for(let i = 0; i < 12; i++) {
+			if(currentAge < retirementAge) {
+				currentBalance += currentInvestmentPerMonth;
+			} else {
+				return Math.round(spendingPerYear / currentBalance * 10000) / 100;
+				currentBalance -= monthlySpending;
+			}
+			currentBalance *= 1 + monthlyInterestRate;
+		};
+		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent / 100;
+		currentAge += 1;
+	}
+	return currentAge;
+}
+
+
 function calculateRetirementAge(
 	startingAge: number,
 	startingBalance: number,
@@ -80,13 +115,14 @@ function calculateRetirementAge(
 	startingInvestmentPerMonth: number,
 	investmentIncreasingRatePercent: number,
 	spendingPerYear: number,
-	safeWithdrawlRate: number,
+	withdrawlRate: number,
 ): number {
+	console.count('retirement age');
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
 	const monthlyInterestRate = interestRatePercent / 100 / 12;
-	const requiredNestEgg = spendingPerYear / safeWithdrawlRate * 100;
+	const requiredNestEgg = spendingPerYear / withdrawlRate * 100;
 	while(currentAge <= maxAge) {
 		if(currentBalance < 0) {
 			break;
@@ -95,7 +131,8 @@ function calculateRetirementAge(
 			if(currentBalance < requiredNestEgg) {
 				currentBalance += currentInvestmentPerMonth;
 			} else {
-				return currentAge + 1;
+				console.table({currentBalance, requiredNestEgg, currentAge});
+				return currentAge;
 			}
 			currentBalance *= 1 + monthlyInterestRate;
 		};
@@ -191,15 +228,15 @@ const NumberInput: Component<NumberInputProps> = props => {
 
 const App: Component = () => {
 	const defaultValues = {
-		startingAge: 22,
+		startingAge: 20,
 		startingBalance: 0,
-		interestRate: 10,
-		retirementAge: 50,
+		interestRate: 7,
+		retirementAge: 60,
 		maxAge: 120,
-		startingInvestmentPerMonth: 500,
-		investmentIncreasingRate: 1,
+		startingInvestmentPerMonth: 750,
+		investmentIncreasingRate: 0,
 		spendingPerYear: 100_000,
-		safeWithdrawlRate: 4,
+		withdrawlRate: 5.05,
 	}
 	const inputSignals = {
 		startingAge: createSignal(defaultValues.startingAge),
@@ -210,10 +247,10 @@ const App: Component = () => {
 		startingInvestmentPerMonth: createSignal(defaultValues.startingInvestmentPerMonth),
 		investmentIncreasingRate: createSignal(defaultValues.investmentIncreasingRate),
 		spendingPerYear: createSignal(defaultValues.spendingPerYear),
-		safeWithdrawlRate: createSignal(defaultValues.safeWithdrawlRate),
+		withdrawlRate: createSignal(defaultValues.withdrawlRate),
 	}
-	const [useSafeWithdrawlRate, setUseSafeWithdrawlRate] = createSignal(getURLParam('useSafeWithdrawlRate') !== null);
-	const toggleUseSafeWithdrawlRate = () => setUseSafeWithdrawlRate(!useSafeWithdrawlRate());
+	const [useWithdrawlRate, setUseWithdrawlRate] = createSignal(getURLParam('useWithdrawlRate') !== null);
+	const toggleUseWithdrawlRate = () => setUseWithdrawlRate(!useWithdrawlRate());
 	let hiddenDatasets = getHiddenDatasetsFromURLParam();
 	onMount(() => {
 		Chart.register(Title, Tooltip, Legend, Colors);
@@ -227,14 +264,14 @@ const App: Component = () => {
 		});
 	});
 	createEffect(() => {
-		if(useSafeWithdrawlRate()) {
-			setURLParam('useSafeWithdrawlRate', '0');
+		if(useWithdrawlRate()) {
+			setURLParam('useWithdrawlRate', '0');
 		} else {
-			deleteURLParam('useSafeWithdrawlRate');
+			deleteURLParam('useWithdrawlRate');
 		}
 	});
 	createEffect(() => {
-		if(useSafeWithdrawlRate()) {
+		if(useWithdrawlRate()) {
 			inputSignals.retirementAge[1](calculateRetirementAge(
 				inputSignals.startingAge[0](),
 				inputSignals.startingBalance[0](),
@@ -243,12 +280,24 @@ const App: Component = () => {
 				inputSignals.startingInvestmentPerMonth[0](),
 				inputSignals.investmentIncreasingRate[0](),
 				inputSignals.spendingPerYear[0](),
-				inputSignals.safeWithdrawlRate[0](),
+				inputSignals.withdrawlRate[0](),
+			))
+		} else {
+			inputSignals.withdrawlRate[1](calculateWithdrawlRate(
+				inputSignals.startingAge[0](),
+				inputSignals.startingBalance[0](),
+				inputSignals.interestRate[0](),
+				inputSignals.retirementAge[0](),
+				inputSignals.maxAge[0](),
+				inputSignals.startingInvestmentPerMonth[0](),
+				inputSignals.investmentIncreasingRate[0](),
+				inputSignals.spendingPerYear[0](),
 			))
 		}
 	});
 	// TODO: this gets called twice on every change. Fix that
 	const chartData = () => { 
+		console.count('chartData');
 		const data = calculateData(
 			inputSignals.startingAge[0](),
 			inputSignals.startingBalance[0](),
@@ -305,31 +354,24 @@ const App: Component = () => {
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                                                  />
-			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                        />
-			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                        />
-			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}              disabled={useSafeWithdrawlRate()} />
-			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                          />
-			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}                         />
-			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}   step={0.5}                        />
-			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}            step={1000}                       />
-			<Show when={useSafeWithdrawlRate()}>
-				<NumberInput
-					name="Safe Withdrawl Rate (%)"
-					valueSignal={inputSignals.safeWithdrawlRate}
-					defaultValue={defaultValues.safeWithdrawlRate}
-					step={0.5}
-				/>
-			</Show>
+			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                                                          />
+			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                                />
+			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                                />
+			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}                         disabled={useWithdrawlRate()}  />
+			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                                  />
+			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}                                 />
+			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}   step={0.5}                                />
+			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}            step={1000}                               />
+			<NumberInput name="Withdrawl Rate (%)"             defaultValue={defaultValues.withdrawlRate}              valueSignal={inputSignals.withdrawlRate}              step={0.5} disabled={!useWithdrawlRate()} />
 		</div>
 		<div>
 			<input
 				type="checkbox"
-				id="useSafeWithdrawlRate"
-				onclick={e => setUseSafeWithdrawlRate((e.target as HTMLInputElement).checked)}
-				checked={useSafeWithdrawlRate()}
+				id="useWithdrawlRate"
+				onclick={e => setUseWithdrawlRate((e.target as HTMLInputElement).checked)}
+				checked={useWithdrawlRate()}
 			/>
-			<label for="useSafeWithdrawlRate">Use Safe Withdrawl Rate</label>
+			<label for="useWithdrawlRate">Use Withdrawl Rate</label>
 			<button
 				onclick={() => location.href = './'}
 			>Reset</button>
