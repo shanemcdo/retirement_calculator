@@ -310,9 +310,11 @@ const App: Component = () => {
 				/>
 			</Show>
 		</div>
+		<div>
 			<button
 				onclick={toggleUseSafeWithdrawlRate}
 			>{useSafeWithdrawlRate() ? "Don't Use Safe Withdrawl Rate" : "Use Safe Withdrawl Rate"}</button>
+		</div>
 		<div class={styles.chart_container} >
 			<Line
 				data={chartData()}
