@@ -19,6 +19,7 @@ type NumberInputProps = {
 	valueSignal: Signal<number>,
 	defaultValue?: number,
 	disabled?: boolean,
+	step?: number,
 };
 
 function calculateData(
@@ -179,6 +180,7 @@ const NumberInput: Component<NumberInputProps> = props => {
 			value={value()}
 			class={styles.number_input}
 			id={id}
+			step={props.step}
 			disabled={props.disabled ?? false}
 			onChange={(e) => {
 				setValue(e.target.valueAsNumber);
@@ -303,19 +305,20 @@ const App: Component = () => {
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                 />
-			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}             />
-			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}                />
-			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge} disabled={useSafeWithdrawlRate()} />
-			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                      />
-			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth}  />
-			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}    />
-			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}             />
+			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                                                  />
+			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                        />
+			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                        />
+			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}              disabled={useSafeWithdrawlRate()} />
+			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                         /> 
+			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}                         />
+			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}   step={0.5}                        />
+			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}            step={1000}                       />
 			<Show when={useSafeWithdrawlRate()}>
 				<NumberInput
 					name="Safe Withdrawl Rate (%)"
 					valueSignal={inputSignals.safeWithdrawlRate}
 					defaultValue={defaultValues.safeWithdrawlRate}
+					step={0.5}
 				/>
 			</Show>
 		</div>
