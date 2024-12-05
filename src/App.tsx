@@ -216,6 +216,17 @@ const App: Component = () => {
 	const [useSafeWithdrawlRate, setUseSafeWithdrawlRate] = createSignal(getURLParam('useSafeWithdrawlRate') !== null);
 	const toggleUseSafeWithdrawlRate = () => setUseSafeWithdrawlRate(!useSafeWithdrawlRate());
 	let hiddenDatasets = getHiddenDatasetsFromURLParam();
+	onMount(() => {
+		Chart.register(Title, Tooltip, Legend, Colors);
+		Chart.defaults.font.family = '"Josefin Sans", sans-serif';
+		document.addEventListener('click', () => {
+			setTimeout(() =>{
+				const chart = Chart.getChart(document.querySelector('canvas')!)!;
+				hiddenDatasets = chart?.legend?.legendItems?.map(({ hidden }) => hidden ?? false) ?? []
+				addHiddenDatasetsURLParam(hiddenDatasets);
+			}, 100);
+		});
+	});
 	createEffect(() => {
 		if(useSafeWithdrawlRate()) {
 			setURLParam('useSafeWithdrawlRate', '0');
@@ -237,17 +248,6 @@ const App: Component = () => {
 			))
 		}
 	});
-	onMount(() => {
-		Chart.register(Title, Tooltip, Legend, Colors);
-		Chart.defaults.font.family = '"Josefin Sans", sans-serif';
-		document.addEventListener('click', () => {
-			setTimeout(() =>{
-				const chart = Chart.getChart(document.querySelector('canvas')!)!;
-				hiddenDatasets = chart?.legend?.legendItems?.map(({ hidden }) => hidden ?? false) ?? []
-				addHiddenDatasetsURLParam(hiddenDatasets);
-			}, 100);
-		});
-	});
 	const chartData = () => { 
 		const data = calculateData(
 			inputSignals.startingAge[0](),
@@ -259,36 +259,6 @@ const App: Component = () => {
 			inputSignals.investmentIncreasingRate[0](),
 			inputSignals.spendingPerYear[0](),
 		);
-		return {
-			labels: data.map(({ year }) => year),
-			datasets: [
-				{
-					label: 'Retirement Fund',
-					data: data.map(({ value }) => value),
-					hidden: hiddenDatasets[0] ?? false,
-				},
-				{
-					label: 'Principal',
-					data: data.map(({ principal }) => principal),
-					hidden: hiddenDatasets[1] ?? false,
-				},
-				{
-					label: 'Interest Per Year',
-					data: data.map(({ interestPerYear }) => interestPerYear),
-					hidden: hiddenDatasets[2] ?? false,
-				},
-				{
-					label: 'Total Interest',
-					data: data.map(({ totalInterest }) => totalInterest),
-					hidden: hiddenDatasets[3] ?? false,
-				},
-				{
-					label: 'Spending',
-					data: data.map(({ spending }) => spending),
-					hidden: hiddenDatasets[4] ?? false,
-				},
-			],
-		};
 		return {
 			labels: data.map(({ year }) => year),
 			datasets: [
