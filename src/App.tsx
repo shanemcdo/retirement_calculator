@@ -31,7 +31,6 @@ function calculateData(
 	investmentIncreasingRatePercent: number,
 	spendingPerYear: number,
 ): Data {
-	console.count('data');
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
@@ -82,7 +81,6 @@ function calculateRetirementAge(
 	spendingPerYear: number,
 	safeWithdrawlRate: number,
 ): number {
-	console.count('retirement');
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
@@ -168,7 +166,6 @@ const NumberInput: Component<NumberInputProps> = props => {
 		setValue(parseInt(param));
 	}
 	createEffect(() => {
-		console.log(props.name, value());
 		if(props.defaultValue === value()) {
 			deleteURLParam(props.name);
 		} else {
@@ -248,6 +245,7 @@ const App: Component = () => {
 			))
 		}
 	});
+	// TODO: this gets called twice on every change. Fix that
 	const chartData = () => { 
 		const data = calculateData(
 			inputSignals.startingAge[0](),
