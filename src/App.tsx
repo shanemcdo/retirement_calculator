@@ -1,6 +1,6 @@
-import type { Component, Ref } from 'solid-js';
+import type { Component, Signal } from 'solid-js';
 
-import { createSignal, onMount, createUniqueId, Show, createEffect } from 'solid-js';
+import { createSignal, onMount, createUniqueId, Show, createEffect, untrack } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import styles from './App.module.css';
@@ -15,10 +15,9 @@ type Data = {
 }[];
 
 type NumberInputProps = {
-	defaultValue: number,
 	name: string,
-	ref: Ref<HTMLInputElement>,
-	updateData: () => void,
+	valueSignal: Signal<number>,
+	defaultValue?: number,
 	disabled?: boolean,
 };
 
@@ -32,6 +31,7 @@ function calculateData(
 	investmentIncreasingRatePercent: number,
 	spendingPerYear: number,
 ): Data {
+	console.count('data');
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
@@ -82,6 +82,7 @@ function calculateRetirementAge(
 	spendingPerYear: number,
 	safeWithdrawlRate: number,
 ): number {
+	console.count('retirement');
 	let currentAge = startingAge;
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
@@ -161,81 +162,81 @@ function getHiddenDatasetsFromURLParam(): boolean[] {
 
 const NumberInput: Component<NumberInputProps> = props => {
 	const id = createUniqueId();
+	const [value, setValue] = props.valueSignal;
+	const param = getURLParam(props.name);
+	if(param !== null) {
+		setValue(parseInt(param));
+	}
+	createEffect(() => {
+		console.log(props.name, value());
+		if(props.defaultValue === value()) {
+			deleteURLParam(props.name);
+		} else {
+			setURLParam(props.name, value().toString());
+		}
+	})
 	return <>
 		<label for={id} >{ props.name }:</label>
 		<input
 			type="number"
-			value={getURLParam(props.name) ?? props.defaultValue}
+			value={value()}
 			class={styles.number_input}
-			ref={props.ref}
 			id={id}
 			disabled={props.disabled ?? false}
 			onChange={(e) => {
-				if(e.target.valueAsNumber === props.defaultValue) {
-					deleteURLParam(props.name);
-				} else {
-					setURLParam(props.name, e.target.value);
-				}
-				props.updateData();
+				setValue(e.target.valueAsNumber);
 			}}
 		/>
 	</>;
 }
 
 const App: Component = () => {
-	const [data, setData] = createSignal<Data>([]);
-	let startingAgeInput: HTMLInputElement | undefined;
-	let startingBalanceInput: HTMLInputElement | undefined;
-	let interestRateInput: HTMLInputElement | undefined;
-	let retirementAgeInput: HTMLInputElement | undefined;
-	let maxAgeInput: HTMLInputElement | undefined;
-	let startingInvestmentPerMonthInput: HTMLInputElement | undefined;
-	let investmentIncreasingRateInput: HTMLInputElement | undefined;
-	let spendingPerYearInput: HTMLInputElement | undefined;
-	let safeWithdrawlRateInput: HTMLInputElement | undefined;
-	let hiddenDatasets = getHiddenDatasetsFromURLParam();
+	const defaultValues = {
+		startingAge: 22,
+		startingBalance: 0,
+		interestRate: 10,
+		retirementAge: 50,
+		maxAge: 120,
+		startingInvestmentPerMonth: 500,
+		investmentIncreasingRate: 1,
+		spendingPerYear: 100_000,
+		safeWithdrawlRate: 4,
+	}
+	const inputSignals = {
+		startingAge: createSignal(defaultValues.startingAge),
+		startingBalance: createSignal(defaultValues.startingBalance),
+		interestRate: createSignal(defaultValues.interestRate),
+		retirementAge: createSignal(defaultValues.retirementAge),
+		maxAge: createSignal(defaultValues.maxAge),
+		startingInvestmentPerMonth: createSignal(defaultValues.startingInvestmentPerMonth),
+		investmentIncreasingRate: createSignal(defaultValues.investmentIncreasingRate),
+		spendingPerYear: createSignal(defaultValues.spendingPerYear),
+		safeWithdrawlRate: createSignal(defaultValues.safeWithdrawlRate),
+	}
 	const [useSafeWithdrawlRate, setUseSafeWithdrawlRate] = createSignal(getURLParam('useSafeWithdrawlRate') !== null);
 	const toggleUseSafeWithdrawlRate = () => setUseSafeWithdrawlRate(!useSafeWithdrawlRate());
+	let hiddenDatasets = getHiddenDatasetsFromURLParam();
 	createEffect(() => {
 		if(useSafeWithdrawlRate()) {
 			setURLParam('useSafeWithdrawlRate', '0');
 		} else {
 			deleteURLParam('useSafeWithdrawlRate');
 		}
-		updateData();
 	});
-	const updateWithoutSafeWithdrawl = () => {
-		setData(calculateData(
-			startingAgeInput!.valueAsNumber,
-			startingBalanceInput!.valueAsNumber,
-			interestRateInput!.valueAsNumber,
-			retirementAgeInput!.valueAsNumber,
-			maxAgeInput!.valueAsNumber,
-			startingInvestmentPerMonthInput!.valueAsNumber,
-			investmentIncreasingRateInput!.valueAsNumber,
-			spendingPerYearInput!.valueAsNumber,
-		));
-	};
-	const updateWithSafeWithdrawl = () => {
-		retirementAgeInput!.value = calculateRetirementAge(
-			startingAgeInput!.valueAsNumber,
-			startingBalanceInput!.valueAsNumber,
-			interestRateInput!.valueAsNumber,
-			maxAgeInput!.valueAsNumber,
-			startingInvestmentPerMonthInput!.valueAsNumber,
-			investmentIncreasingRateInput!.valueAsNumber,
-			spendingPerYearInput!.valueAsNumber,
-			safeWithdrawlRateInput!.valueAsNumber
-		).toString();
-		retirementAgeInput!.dispatchEvent(new Event('change'));
-	};
-	const updateData = () => {
+	createEffect(() => {
 		if(useSafeWithdrawlRate()) {
-			updateWithSafeWithdrawl();
-		} else {
-			updateWithoutSafeWithdrawl();
+			inputSignals.retirementAge[1](calculateRetirementAge(
+				untrack(inputSignals.startingAge[0]),
+				untrack(inputSignals.startingBalance[0]),
+				untrack(inputSignals.interestRate[0]),
+				untrack(inputSignals.maxAge[0]),
+				untrack(inputSignals.startingInvestmentPerMonth[0]),
+				untrack(inputSignals.investmentIncreasingRate[0]),
+				untrack(inputSignals.spendingPerYear[0]),
+				inputSignals.safeWithdrawlRate[0](),
+			))
 		}
-	};
+	});
 	onMount(() => {
 		Chart.register(Title, Tooltip, Legend, Colors);
 		Chart.defaults.font.family = '"Josefin Sans", sans-serif';
@@ -246,38 +247,79 @@ const App: Component = () => {
 				addHiddenDatasetsURLParam(hiddenDatasets);
 			}, 100);
 		});
-		updateData();
 	});
-	const chartData = () => ({
-		labels: data().map(({ year }) => year),
-		datasets: [
-			{
-				label: 'Retirement Fund',
-				data: data().map(({ value }) => value),
-				hidden: hiddenDatasets[0] ?? false,
-			},
-			{
-				label: 'Principal',
-				data: data().map(({ principal }) => principal),
-				hidden: hiddenDatasets[1] ?? false,
-			},
-			{
-				label: 'Interest Per Year',
-				data: data().map(({ interestPerYear }) => interestPerYear),
-				hidden: hiddenDatasets[2] ?? false,
-			},
-			{
-				label: 'Total Interest',
-				data: data().map(({ totalInterest }) => totalInterest),
-				hidden: hiddenDatasets[3] ?? false,
-			},
-			{
-				label: 'Spending',
-				data: data().map(({ spending }) => spending),
-				hidden: hiddenDatasets[4] ?? false,
-			},
-		],
-	});
+	const chartData = () => { 
+		const data = calculateData(
+			inputSignals.startingAge[0](),
+			inputSignals.startingBalance[0](),
+			inputSignals.interestRate[0](),
+			inputSignals.retirementAge[0](),
+			inputSignals.maxAge[0](),
+			inputSignals.startingInvestmentPerMonth[0](),
+			inputSignals.investmentIncreasingRate[0](),
+			inputSignals.spendingPerYear[0](),
+		);
+		return {
+			labels: data.map(({ year }) => year),
+			datasets: [
+				{
+					label: 'Retirement Fund',
+					data: data.map(({ value }) => value),
+					hidden: hiddenDatasets[0] ?? false,
+				},
+				{
+					label: 'Principal',
+					data: data.map(({ principal }) => principal),
+					hidden: hiddenDatasets[1] ?? false,
+				},
+				{
+					label: 'Interest Per Year',
+					data: data.map(({ interestPerYear }) => interestPerYear),
+					hidden: hiddenDatasets[2] ?? false,
+				},
+				{
+					label: 'Total Interest',
+					data: data.map(({ totalInterest }) => totalInterest),
+					hidden: hiddenDatasets[3] ?? false,
+				},
+				{
+					label: 'Spending',
+					data: data.map(({ spending }) => spending),
+					hidden: hiddenDatasets[4] ?? false,
+				},
+			],
+		};
+		return {
+			labels: data.map(({ year }) => year),
+			datasets: [
+				{
+					label: 'Retirement Fund',
+					data: data.map(({ value }) => value),
+					hidden: hiddenDatasets[0] ?? false,
+				},
+				{
+					label: 'Principal',
+					data: data.map(({ principal }) => principal),
+					hidden: hiddenDatasets[1] ?? false,
+				},
+				{
+					label: 'Interest Per Year',
+					data: data.map(({ interestPerYear }) => interestPerYear),
+					hidden: hiddenDatasets[2] ?? false,
+				},
+				{
+					label: 'Total Interest',
+					data: data.map(({ totalInterest }) => totalInterest),
+					hidden: hiddenDatasets[3] ?? false,
+				},
+				{
+					label: 'Spending',
+					data: data.map(({ spending }) => spending),
+					hidden: hiddenDatasets[4] ?? false,
+				},
+			],
+		};
+	};
 	const chartOptions = {
 		responsive: true,
 		maintainAspectRatio: false,
@@ -293,20 +335,19 @@ const App: Component = () => {
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age"                   defaultValue={22}      ref={startingAgeInput}                updateData={updateData} />
-			<NumberInput name="Starting Balance"               defaultValue={0}       ref={startingBalanceInput}            updateData={updateData} />
-			<NumberInput name="Interest Rate (%)"              defaultValue={10}      ref={interestRateInput}               updateData={updateData} />
-			<NumberInput name="Retirement Age"                 defaultValue={50}      ref={retirementAgeInput}              updateData={updateWithoutSafeWithdrawl} disabled={useSafeWithdrawlRate()} />
-			<NumberInput name="Max Age"                        defaultValue={120}     ref={maxAgeInput}                     updateData={updateData} />
-			<NumberInput name="Starting Investment Per Month"  defaultValue={500}     ref={startingInvestmentPerMonthInput} updateData={updateData} />
-			<NumberInput name="Investment Increasing Rate (%)" defaultValue={1}       ref={investmentIncreasingRateInput}   updateData={updateData} />
-			<NumberInput name="Spending Per Year Input"        defaultValue={100_000} ref={spendingPerYearInput}            updateData={updateData} />
+			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                 />
+			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}             />
+			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}                />
+			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge} disabled={useSafeWithdrawlRate()} />
+			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                      />
+			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth}  />
+			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}    />
+			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}             />
 			<Show when={useSafeWithdrawlRate()}>
 				<NumberInput
 					name="Safe Withdrawl Rate (%)"
-					defaultValue={4}
-					ref={safeWithdrawlRateInput}
-					updateData={updateWithSafeWithdrawl}
+					valueSignal={inputSignals.safeWithdrawlRate}
+					defaultValue={defaultValues.safeWithdrawlRate}
 				/>
 			</Show>
 		</div>
