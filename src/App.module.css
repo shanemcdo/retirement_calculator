@@ -12,13 +12,17 @@
 	flex-flow: column;
 	button {
 		margin: 0 10px;
+		padding: 0 5px;
+	}
+	span {
+		margin: auto 0;
 	}
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin: 0 20%;
+  margin: 0 15%;
   text-align: right;
   label {
   	margin-right: 0.5em;

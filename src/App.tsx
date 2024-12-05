@@ -1,6 +1,6 @@
 import type { Component, Signal } from 'solid-js';
 
-import { createSignal, onMount, createUniqueId, createEffect, untrack } from 'solid-js';
+import { createSignal, onMount, createUniqueId, createEffect, untrack, Show } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import styles from './App.module.css';
@@ -18,8 +18,8 @@ type NumberInputProps = {
 	name: string,
 	valueSignal: Signal<number>,
 	defaultValue?: number,
-	disabled?: boolean,
 	step?: number,
+	disabledFieldSignal?: Signal<string>,
 };
 
 function calculateData(
@@ -141,6 +141,39 @@ function calculateRetirementAge(
 	return currentAge;
 }
 
+function calculateInvestmentPerMonth(
+	startingAge: number,
+	startingBalance: number,
+	interestRatePercent: number,
+	retirementAge: number,
+	maxAge: number,
+	investmentIncreasingRatePercent: number,
+	spendingPerYear: number,
+	withdrawlRate: number,
+): number {
+	const monthlyInterestRate = interestRatePercent / 100 / 12;
+	const requiredNestEgg = spendingPerYear / withdrawlRate * 100;
+	const step = 50;
+	for (let startingInvestmentPerMonth = step;startingAge <= maxAge && startingAge <= retirementAge;startingInvestmentPerMonth += step){
+		let currentAge = startingAge;
+		let currentBalance = startingBalance;
+		let currentInvestmentPerMonth = startingInvestmentPerMonth;
+		while(currentAge <= maxAge && currentAge <= retirementAge && currentBalance >= 0) {
+			for(let i = 0; i < 12; i++) {
+				if(currentBalance < requiredNestEgg) {
+					currentBalance += currentInvestmentPerMonth;
+				} else {
+					return startingInvestmentPerMonth;
+				}
+				currentBalance *= 1 + monthlyInterestRate;
+			};
+			currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent / 100;
+			currentAge += 1;
+		}
+	}
+	return 1000;
+}
+
 function getURL(): URL {
 	return new URL(window.location.toString());
 }
@@ -209,15 +242,27 @@ const NumberInput: Component<NumberInputProps> = props => {
 			setURLParam(props.name, value().toString());
 		}
 	})
+	const disabled = () => (
+		props.disabledFieldSignal !== undefined &&
+		props.disabledFieldSignal![0]() === props.name
+	);
 	return <>
-		<label for={id} >{ props.name }:</label>
+		<span>
+			<Show when={props.disabledFieldSignal !== undefined && !disabled()}>
+				<button onclick={() => {
+					console.log(props.name);
+					props.disabledFieldSignal![1](props.name);
+				}}>disable</button>
+			</Show>
+			<label for={id} >{ props.name }:</label>
+		</span>
 		<input
 			type="number"
 			value={value()}
 			class={styles.number_input}
 			id={id}
 			step={props.step}
-			disabled={props.disabled ?? false}
+			disabled={disabled()}
 			onChange={(e) => {
 				setValue(e.target.valueAsNumber);
 			}}
@@ -236,6 +281,7 @@ const App: Component = () => {
 		investmentIncreasingRate: 0,
 		spendingPerYear: 100_000,
 		withdrawlRate: 5.05,
+		disabledField: 'Withdrawl Rate (%)',
 	}
 	const inputSignals = {
 		startingAge: createSignal(defaultValues.startingAge),
@@ -248,8 +294,8 @@ const App: Component = () => {
 		spendingPerYear: createSignal(defaultValues.spendingPerYear),
 		withdrawlRate: createSignal(defaultValues.withdrawlRate),
 	}
-	const [useWithdrawlRate, setUseWithdrawlRate] = createSignal(getURLParam('useWithdrawlRate') !== null);
-	const toggleUseWithdrawlRate = () => setUseWithdrawlRate(!useWithdrawlRate());
+	const disabledFieldSignal = createSignal(getURLParam('disabledField') ?? defaultValues.disabledField);
+	const [disabledField, setDisabledField] = disabledFieldSignal;
 	let hiddenDatasets = getHiddenDatasetsFromURLParam();
 	onMount(() => {
 		Chart.register(Title, Tooltip, Legend, Colors);
@@ -263,35 +309,52 @@ const App: Component = () => {
 		});
 	});
 	createEffect(() => {
-		if(useWithdrawlRate()) {
-			setURLParam('useWithdrawlRate', '0');
+		if(disabledField() === defaultValues.disabledField) {
+			deleteURLParam('disabledField');
 		} else {
-			deleteURLParam('useWithdrawlRate');
+			setURLParam('disabledField', disabledField());
 		}
 	});
 	createEffect(() => {
-		if(useWithdrawlRate()) {
-			inputSignals.retirementAge[1](calculateRetirementAge(
-				inputSignals.startingAge[0](),
-				inputSignals.startingBalance[0](),
-				inputSignals.interestRate[0](),
-				inputSignals.maxAge[0](),
-				inputSignals.startingInvestmentPerMonth[0](),
-				inputSignals.investmentIncreasingRate[0](),
-				inputSignals.spendingPerYear[0](),
-				inputSignals.withdrawlRate[0](),
-			))
-		} else {
-			inputSignals.withdrawlRate[1](calculateWithdrawlRate(
-				inputSignals.startingAge[0](),
-				inputSignals.startingBalance[0](),
-				inputSignals.interestRate[0](),
-				inputSignals.retirementAge[0](),
-				inputSignals.maxAge[0](),
-				inputSignals.startingInvestmentPerMonth[0](),
-				inputSignals.investmentIncreasingRate[0](),
-				inputSignals.spendingPerYear[0](),
-			))
+		switch(disabledField()) {
+			case 'Retirement Age':
+				inputSignals.retirementAge[1](calculateRetirementAge(
+					inputSignals.startingAge[0](),
+					inputSignals.startingBalance[0](),
+					inputSignals.interestRate[0](),
+					inputSignals.maxAge[0](),
+					inputSignals.startingInvestmentPerMonth[0](),
+					inputSignals.investmentIncreasingRate[0](),
+					inputSignals.spendingPerYear[0](),
+					inputSignals.withdrawlRate[0](),
+				))
+				break;
+			case 'Withdrawl Rate (%)':
+				inputSignals.withdrawlRate[1](calculateWithdrawlRate(
+					inputSignals.startingAge[0](),
+					inputSignals.startingBalance[0](),
+					inputSignals.interestRate[0](),
+					inputSignals.retirementAge[0](),
+					inputSignals.maxAge[0](),
+					inputSignals.startingInvestmentPerMonth[0](),
+					inputSignals.investmentIncreasingRate[0](),
+					inputSignals.spendingPerYear[0](),
+				))
+				break;
+			case 'Starting Investment Per Month':
+				inputSignals.startingInvestmentPerMonth[1](calculateInvestmentPerMonth(
+					inputSignals.startingAge[0](),
+					inputSignals.startingBalance[0](),
+					inputSignals.interestRate[0](),
+					inputSignals.retirementAge[0](),
+					inputSignals.maxAge[0](),
+					inputSignals.investmentIncreasingRate[0](),
+					inputSignals.spendingPerYear[0](),
+					inputSignals.withdrawlRate[0](),
+				))
+				break;
+			default:
+				setDisabledField(defaultValues.disabledField);
 		}
 	});
 	// TODO: this gets called twice on every change. Fix that
@@ -353,24 +416,17 @@ const App: Component = () => {
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
-			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                                                          />
-			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                                />
-			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                                />
-			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}                         disabled={useWithdrawlRate()}  />
-			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                                  />
-			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}                                 />
-			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}   step={0.5}                                />
-			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}            step={1000}                               />
-			<NumberInput name="Withdrawl Rate (%)"             defaultValue={defaultValues.withdrawlRate}              valueSignal={inputSignals.withdrawlRate}              step={0.5} disabled={!useWithdrawlRate()} />
+			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                                                                     />
+			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                                           />
+			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                                           />
+			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}                         disabledFieldSignal={disabledFieldSignal} />
+			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                                             />
+			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}  disabledFieldSignal={disabledFieldSignal} />
+			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}   step={0.5}                                           />
+			<NumberInput name="Spending Per Year Input"        defaultValue={defaultValues.spendingPerYear}            valueSignal={inputSignals.spendingPerYear}            step={1000}                                          />
+			<NumberInput name="Withdrawl Rate (%)"             defaultValue={defaultValues.withdrawlRate}              valueSignal={inputSignals.withdrawlRate}              step={0.5} disabledFieldSignal={disabledFieldSignal} />
 		</div>
 		<div>
-			<input
-				type="checkbox"
-				id="useWithdrawlRate"
-				onclick={e => setUseWithdrawlRate((e.target as HTMLInputElement).checked)}
-				checked={useWithdrawlRate()}
-			/>
-			<label for="useWithdrawlRate">Use Withdrawl Rate</label>
 			<button
 				onclick={() => location.href = './'}
 			>Reset</button>
