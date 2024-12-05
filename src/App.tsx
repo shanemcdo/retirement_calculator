@@ -41,7 +41,7 @@ function calculateData(
 	const monthlyInterestRate = interestRatePercent / 100 / 12;
 	const monthlySpending = spendingPerYear / 12;
 	const data: Data = [];
-	while(currentAge < maxAge) {
+	while(currentAge <= maxAge) {
 		data.push({
 			year: currentAge,
 			value: currentBalance,
