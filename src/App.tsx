@@ -96,6 +96,30 @@ function getURLParam(name: string): string | null {
 	const url = getURL();
 	return url.searchParams.get(name);
 }
+function addHiddenDatasetsURLParam(hiddenDatasets: boolean[]) {
+	let result = '';
+	for(let i = 0; i < hiddenDatasets.length; i++) {
+		if(!hiddenDatasets[i]) {
+			continue;
+		} else if(result !== '') {
+			result += ',';
+		}
+		result += i.toString();
+	};
+	setURLParam('hiddenDatasets', result);
+}
+
+function getHiddenDatasetsFromURLParam(): boolean[] {
+	const result: boolean[] = [];
+	console.log( getURLParam('hiddenDatasets'));
+	getURLParam('hiddenDatasets')
+		?.split(',')
+		.map(x => parseInt(x))
+		.forEach( index => {
+			result[index] = true;
+		});
+	return result;
+}
 
 const NumberInput: Component<NumberInputProps> = props => {
 	const id = createUniqueId();
@@ -120,7 +144,6 @@ const NumberInput: Component<NumberInputProps> = props => {
 }
 
 const App: Component = () => {
-	const url = new URL(window.location.toString());
 	const [data, setData] = createSignal<Data>([]);
 	let startingAgeInput: HTMLInputElement | undefined;
 	let startingBalanceInput: HTMLInputElement | undefined;
@@ -130,7 +153,8 @@ const App: Component = () => {
 	let startingInvestmentPerMonthInput: HTMLInputElement | undefined;
 	let investmentIncreasingRateInput: HTMLInputElement | undefined;
 	let spendingPerYearInput: HTMLInputElement | undefined;
-	let hiddenDatasets: boolean[] = [];
+	let hiddenDatasets = getHiddenDatasetsFromURLParam();
+	console.log(hiddenDatasets);
 	const updateData = () => {
 		setData(calculateData(
 			startingAgeInput!.valueAsNumber,
@@ -149,7 +173,9 @@ const App: Component = () => {
 		document.addEventListener('click', () => {
 			setTimeout(() =>{
 				const chart = Chart.getChart(document.querySelector('canvas')!)!;
+				console.log(chart)
 				hiddenDatasets = chart?.legend?.legendItems?.map(({ hidden }) => hidden ?? false) ?? []
+				addHiddenDatasetsURLParam(hiddenDatasets);
 			}, 100);
 		});
 		updateData();
