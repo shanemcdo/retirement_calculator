@@ -314,6 +314,9 @@ const App: Component = () => {
 			<button
 				onclick={toggleUseSafeWithdrawlRate}
 			>{useSafeWithdrawlRate() ? "Don't Use Safe Withdrawl Rate" : "Use Safe Withdrawl Rate"}</button>
+			<button
+				onclick={() => location.href = './'}
+			>Reset</button>
 		</div>
 		<div class={styles.chart_container} >
 			<Line
