@@ -51,6 +51,7 @@ function calculateData(
 			spending,
 			interestPerYear,
 		});
+		interestPerYear = 0;
 		if(currentBalance < 0) {
 			break;
 		}
@@ -62,8 +63,9 @@ function calculateData(
 				spending += monthlySpending;
 				currentBalance -= monthlySpending;
 			}
-			interestPerYear = currentBalance * monthlyInterestRate;
-			totalInterest += interestPerYear;
+			const interestPerMonth = currentBalance * monthlyInterestRate;
+			interestPerYear += interestPerMonth;
+			totalInterest += interestPerMonth;
 			currentBalance *= 1 + monthlyInterestRate;
 		};
 		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent / 100;
