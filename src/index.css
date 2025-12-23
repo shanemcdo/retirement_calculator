@@ -5,5 +5,6 @@ body,
 	padding: 0;
 	height: 100%;
 	width: 100%;
-	font-family: "Josefin Sans", sans-serif;
+	--font: "Josefin Sans", sans-serif;
+	font-family: var(--font);
 }

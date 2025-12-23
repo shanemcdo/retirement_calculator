@@ -1,4 +1,4 @@
 .number_input {
-	font-family: "Josefin Sans", sans-serif;
+	font-family: var(--font);
 }
 
