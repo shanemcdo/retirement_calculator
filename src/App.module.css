@@ -20,13 +20,13 @@
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin: 0 15%;
-  text-align: right;
-  label {
-  	margin-right: 0.5em;
-  }
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	margin: 0 15%;
+	text-align: right;
+	label {
+		margin-right: 0.5em;
+	}
 }
 
 .number_input {
