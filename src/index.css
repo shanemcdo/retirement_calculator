@@ -7,4 +7,37 @@ body,
 	width: 100%;
 	--font: "Josefin Sans", sans-serif;
 	font-family: var(--font);
+
+	--bg-dark: hsl(0, 0%, 0%);
+	--bg: hsl(0, 0%, 5%);
+	--bg-light: hsl(0, 0%, 10%);
+	--bg-disabled: hsl(0, 0%, 30%);
+	--border: hsl(0, 0%, 40%);
+	--text-muted: hsl(0, 0%, 70%);
+	--text: hsl(0, 0%, 95%);
+	background: var(--bg-dark);
+	color: var(--text);
+
+	@media (prefers-color-scheme: light) {
+		--bg-dark: hsl(0, 0%, 85%);
+		--bg: hsl(0, 0%, 90%);
+		--bg-light: hsl(0, 0%, 95%);
+		--bg-disabled: hsl(0, 0%, 75%);
+		--border: hsl(0, 0%, 60%);
+		--text-muted: hsl(0, 0%, 50%);
+		--text: hsl(0, 0%, 10%);
+	}
+
+	button,
+	input {
+		color: var(--text);
+		background: var(--bg);
+		border: solid 1px var(--border);
+
+		&:disabled {
+			color: var(--text-muted);
+			background: var(--bg-disabled);
+		}
+	}
 }
+
