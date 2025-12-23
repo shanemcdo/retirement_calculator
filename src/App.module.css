@@ -29,10 +29,6 @@
 	}
 }
 
-.number_input {
-	font-family: "Josefin Sans", sans-serif;
-}
-
 .chart_container {
 	flex: 1 1 auto;
 	height: 30vw;

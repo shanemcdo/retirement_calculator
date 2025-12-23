@@ -1,26 +1,12 @@
-import type { Component, Signal } from 'solid-js';
+import type { Component } from 'solid-js';
 
-import { createSignal, onMount, createUniqueId, createEffect, untrack, Show } from 'solid-js';
+import { createSignal, onMount, createEffect } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
+import { deleteURLParam, getURLParam, setURLParam } from './util';
+import NumberInput from './NumberInput';
+
 import styles from './App.module.css';
-
-type Data = {
-	year: number,
-	value: number,
-	principal: number,
-	totalInterest: number,
-	spending: number,
-	interestPerYear: number,
-}[];
-
-type NumberInputProps = {
-	name: string,
-	valueSignal: Signal<number>,
-	defaultValue?: number,
-	step?: number,
-	disabledFieldSignal?: Signal<string>,
-};
 
 function calculateData(
 	startingAge: number,
@@ -176,37 +162,7 @@ function calculateInvestmentPerMonth(
 	return 1000;
 }
 
-function getURL(): URL {
-	return new URL(window.location.toString());
-}
-
-function updateURL(newurl: URL) {
-	const urlstring = newurl.toString();
-	window.history.pushState({ path: urlstring },'',urlstring);
-}
-
-function setURLParam(name: string, value: string) {
-	if(value === '') {
-		deleteURLParam(name);
-		return;
-	}
-	const url = getURL();
-	url.searchParams.set(name, value);
-	updateURL(url);
-}
-
-function deleteURLParam(name: string) {
-	const url = getURL();
-	url.searchParams.delete(name);
-	updateURL(url);
-}
-
-function getURLParam(name: string): string | null {
-	const url = getURL();
-	return url.searchParams.get(name);
-}
-
-function addHiddenDatasetsURLParam(hiddenDatasets: boolean[]) {
+export function addHiddenDatasetsURLParam(hiddenDatasets: boolean[]) {
 	let result = '';
 	for(let i = 0; i < hiddenDatasets.length; i++) {
 		if(!hiddenDatasets[i]) {
@@ -228,48 +184,6 @@ function getHiddenDatasetsFromURLParam(): boolean[] {
 			result[index] = true;
 		});
 	return result;
-}
-
-const NumberInput: Component<NumberInputProps> = props => {
-	const id = createUniqueId();
-	const [value, setValue] = props.valueSignal;
-	const param = getURLParam(props.name);
-	if(param !== null) {
-		setValue(parseFloat(param));
-	}
-	createEffect(() => {
-		if(props.defaultValue === value()) {
-			deleteURLParam(props.name);
-		} else {
-			setURLParam(props.name, value().toString());
-		}
-	})
-	const disabled = () => (
-		props.disabledFieldSignal !== undefined &&
-		props.disabledFieldSignal![0]() === props.name
-	);
-	return <>
-		<span>
-			<Show when={props.disabledFieldSignal !== undefined && !disabled()}>
-				<button onclick={() => {
-					console.log(props.name);
-					props.disabledFieldSignal![1](props.name);
-				}}>disable</button>
-			</Show>
-			<label for={id} >{ props.name }:</label>
-		</span>
-		<input
-			type="number"
-			value={value()}
-			class={styles.number_input}
-			id={id}
-			step={props.step}
-			disabled={disabled()}
-			onChange={(e) => {
-				setValue(e.target.valueAsNumber);
-			}}
-		/>
-	</>;
 }
 
 const App: Component = () => {
