@@ -317,6 +317,7 @@ const App: Component = () => {
 			],
 		};
 	};
+	const borderColor = getComputedStyle(document.body).getPropertyValue('--border');
 	const chartOptions = {
 		responsive: true,
 		maintainAspectRatio: false,
@@ -324,8 +325,16 @@ const App: Component = () => {
 			duration: 0,
 		},
 		scales: {
+			x: {
+				grid: {
+					color: borderColor,
+				},
+			},
 			y: { 
 				min: 0,
+				grid: {
+					color: borderColor,
+				},
 			},
 		},
 	};
