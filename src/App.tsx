@@ -352,7 +352,7 @@ const App: Component = () => {
 						borderWidth: 2,
 						label: {
 							display: true,
-							content: 'Retirement',
+							content: 'Stop Investing',
 							position: 'end',
 						},
 					},
