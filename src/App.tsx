@@ -121,7 +121,8 @@ function calculateRetirementAge(
 		for(let i = 0; i < 12; i++) {
 			if(currentAge < stopInvestingAge) {
 				currentBalance += currentInvestmentPerMonth;
-			} else if(currentBalance >= requiredNestEgg) {
+			}
+			if(currentBalance >= requiredNestEgg) {
 				console.table({currentBalance, requiredNestEgg, currentAge});
 				return currentAge;
 			}
