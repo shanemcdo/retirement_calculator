@@ -77,7 +77,6 @@ function calculateWithdrawlRate(
 	let currentBalance = startingBalance;
 	let currentInvestmentPerMonth = startingInvestmentPerMonth;
 	const monthlyInterestRate = interestRatePercent / 100 / 12;
-	const monthlySpending = spendingPerYear / 12;
 	while(currentAge <= maxAge) {
 		if(currentBalance < 0) {
 			break;
@@ -87,7 +86,6 @@ function calculateWithdrawlRate(
 				currentBalance += currentInvestmentPerMonth;
 			} else if(currentAge >= retirementAge) {
 				return Math.round(spendingPerYear / currentBalance * 10000) / 100;
-				currentBalance -= monthlySpending;
 			}
 			currentBalance *= 1 + monthlyInterestRate;
 		};
