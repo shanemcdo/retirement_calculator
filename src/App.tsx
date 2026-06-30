@@ -2,6 +2,7 @@ import type { Component } from 'solid-js';
 
 import { createSignal, onMount, createEffect } from 'solid-js';
 import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
+import annotationPlugin from 'chartjs-plugin-annotation';
 import { Line } from 'solid-chartjs'
 import { deleteURLParam, getURLParam, setURLParam } from './util';
 import NumberInput from './NumberInput';
@@ -216,7 +217,7 @@ const App: Component = () => {
 	const [disabledField, setDisabledField] = disabledFieldSignal;
 	let hiddenDatasets = getHiddenDatasetsFromURLParam();
 	onMount(() => {
-		Chart.register(Title, Tooltip, Legend, Colors);
+		Chart.register(Title, Tooltip, Legend, Colors, annotationPlugin);
 		Chart.defaults.font.family = '"Josefin Sans", sans-serif';
 		document.addEventListener('click', () => {
 			setTimeout(() =>{
@@ -321,7 +322,7 @@ const App: Component = () => {
 		};
 	};
 	const borderColor = getComputedStyle(document.body).getPropertyValue('--border');
-	const chartOptions = {
+	const chartOptions = () => ({
 		responsive: true,
 		maintainAspectRatio: false,
 		animation: {
@@ -340,7 +341,25 @@ const App: Component = () => {
 				},
 			},
 		},
-	};
+		plugins: {
+			annotation: {
+				annotations: {
+					retirement: {
+						type: 'line',
+						xMin: inputSignals.retirementAge[0]() - inputSignals.startingAge[0](),
+						xMax: inputSignals.retirementAge[0]() - inputSignals.startingAge[0](),
+						borderColor: 'green',
+						borderWidth: 2,
+						label: {
+							display: true,
+							content: 'Retirement',
+							position: 'end',
+						},
+					},
+				},
+			},
+		},
+	});
 	return <div class={styles.app}>
 		<h1>Retirement Calculator</h1>
 		<div class={styles.grid}>
@@ -363,7 +382,7 @@ const App: Component = () => {
 		<div class={styles.chart_container} >
 			<Line
 				data={chartData()}
-				options={chartOptions}
+				options={chartOptions()}
 				onclick={() => {
 				}}
 			/>
