@@ -147,7 +147,7 @@ function calculateInvestmentPerMonth(
 ): number {
 	const monthlyInterestRate = interestRatePercent / 100 / 12;
 	const requiredNestEgg = spendingPerYear / withdrawlRate * 100;
-	const step = 50;
+	const step = 0.5;
 	for (let startingInvestmentPerMonth = step;startingAge <= maxAge && startingAge <= retirementAge;startingInvestmentPerMonth += step){
 		let currentAge = startingAge;
 		let currentBalance = startingBalance;
