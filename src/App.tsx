@@ -66,6 +66,7 @@ function calculateWithdrawlRate(
 	startingAge: number,
 	startingBalance: number,
 	interestRatePercent: number,
+	stopInvestingAge: number,
 	retirementAge: number,
 	maxAge: number,
 	startingInvestmentPerMonth: number,
@@ -82,9 +83,9 @@ function calculateWithdrawlRate(
 			break;
 		}
 		for(let i = 0; i < 12; i++) {
-			if(currentAge < retirementAge) {
+			if(currentAge < stopInvestingAge) {
 				currentBalance += currentInvestmentPerMonth;
-			} else {
+			} else if(currentAge >= retirementAge) {
 				return Math.round(spendingPerYear / currentBalance * 10000) / 100;
 				currentBalance -= monthlySpending;
 			}
@@ -100,6 +101,7 @@ function calculateRetirementAge(
 	startingAge: number,
 	startingBalance: number,
 	interestRatePercent: number,
+	stopInvestingAge: number,
 	maxAge: number,
 	startingInvestmentPerMonth: number,
 	investmentIncreasingRatePercent: number,
@@ -117,9 +119,9 @@ function calculateRetirementAge(
 			break;
 		}
 		for(let i = 0; i < 12; i++) {
-			if(currentBalance < requiredNestEgg) {
+			if(currentAge < stopInvestingAge) {
 				currentBalance += currentInvestmentPerMonth;
-			} else {
+			} else if(currentBalance >= requiredNestEgg) {
 				console.table({currentBalance, requiredNestEgg, currentAge});
 				return currentAge;
 			}
@@ -135,6 +137,7 @@ function calculateInvestmentPerMonth(
 	startingAge: number,
 	startingBalance: number,
 	interestRatePercent: number,
+	stopInvestingAge: number,
 	retirementAge: number,
 	maxAge: number,
 	investmentIncreasingRatePercent: number,
@@ -150,9 +153,9 @@ function calculateInvestmentPerMonth(
 		let currentInvestmentPerMonth = startingInvestmentPerMonth;
 		while(currentAge <= maxAge && currentAge <= retirementAge && currentBalance >= 0) {
 			for(let i = 0; i < 12; i++) {
-				if(currentBalance < requiredNestEgg) {
+				if(currentAge < stopInvestingAge) {
 					currentBalance += currentInvestmentPerMonth;
-				} else {
+				} else if(currentBalance >= requiredNestEgg) {
 					return startingInvestmentPerMonth;
 				}
 				currentBalance *= 1 + monthlyInterestRate;
@@ -162,6 +165,46 @@ function calculateInvestmentPerMonth(
 		}
 	}
 	return 1000;
+}
+
+function calculateStopInvestingAge(
+	startingAge: number,
+	startingBalance: number,
+	interestRatePercent: number,
+	retirementAge: number,
+	maxAge: number,
+	startingInvestmentPerMonth: number,
+	investmentIncreasingRatePercent: number,
+	spendingPerYear: number,
+	withdrawlRate: number,
+): number {
+	let currentAge = startingAge;
+	let currentBalance = startingBalance;
+	let currentInvestmentPerMonth = startingInvestmentPerMonth;
+	const monthlyInterestRate = interestRatePercent / 100 / 12;
+	const requiredNestEgg = spendingPerYear / withdrawlRate * 100;
+	while(currentAge <= maxAge) {
+		if(currentBalance < 0) {
+			break;
+		}
+		// check if that's enough by retirement age
+		let testBalance = currentBalance;
+		for(let testAge = currentAge + 1; testAge <= retirementAge; testAge++) {
+			for(let i = 0; i < 12; i++) {
+				testBalance *= 1 + monthlyInterestRate;
+			};
+			if(testBalance >= requiredNestEgg) {
+				return currentAge;
+			}
+		}
+		for(let i = 0; i < 12; i++) {
+			currentBalance += currentInvestmentPerMonth;
+			currentBalance *= 1 + monthlyInterestRate;
+		};
+		currentInvestmentPerMonth *= 1 + investmentIncreasingRatePercent / 100;
+		currentAge += 1;
+	}
+	return currentAge;
 }
 
 export function addHiddenDatasetsURLParam(hiddenDatasets: boolean[]) {
@@ -236,11 +279,25 @@ const App: Component = () => {
 	});
 	createEffect(() => {
 		switch(disabledField()) {
+			case 'Stop Investing Age':
+				inputSignals.stopInvestingAge[1](calculateStopInvestingAge(
+					inputSignals.startingAge[0](),
+					inputSignals.startingBalance[0](),
+					inputSignals.interestRate[0](),
+					inputSignals.retirementAge[0](),
+					inputSignals.maxAge[0](),
+					inputSignals.startingInvestmentPerMonth[0](),
+					inputSignals.investmentIncreasingRate[0](),
+					inputSignals.spendingPerYear[0](),
+					inputSignals.withdrawlRate[0](),
+				))
+				break;
 			case 'Retirement Age':
 				inputSignals.retirementAge[1](calculateRetirementAge(
 					inputSignals.startingAge[0](),
 					inputSignals.startingBalance[0](),
 					inputSignals.interestRate[0](),
+					inputSignals.stopInvestingAge[0](),
 					inputSignals.maxAge[0](),
 					inputSignals.startingInvestmentPerMonth[0](),
 					inputSignals.investmentIncreasingRate[0](),
@@ -253,6 +310,7 @@ const App: Component = () => {
 					inputSignals.startingAge[0](),
 					inputSignals.startingBalance[0](),
 					inputSignals.interestRate[0](),
+					inputSignals.stopInvestingAge[0](),
 					inputSignals.retirementAge[0](),
 					inputSignals.maxAge[0](),
 					inputSignals.startingInvestmentPerMonth[0](),
@@ -265,6 +323,7 @@ const App: Component = () => {
 					inputSignals.startingAge[0](),
 					inputSignals.startingBalance[0](),
 					inputSignals.interestRate[0](),
+					inputSignals.stopInvestingAge[0](),
 					inputSignals.retirementAge[0](),
 					inputSignals.maxAge[0](),
 					inputSignals.investmentIncreasingRate[0](),
@@ -378,7 +437,7 @@ const App: Component = () => {
 			<NumberInput name="Starting age"                   defaultValue={defaultValues.startingAge}                valueSignal={inputSignals.startingAge}                                                                     />
 			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                                           />
 			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                                           />
-			<NumberInput name="Stop Investing Age"             defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.stopInvestingAge}           max={inputSignals.retirementAge[0]()}                />
+			<NumberInput name="Stop Investing Age"             defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.stopInvestingAge}                      disabledFieldSignal={disabledFieldSignal} max={inputSignals.retirementAge[0]()} />
 			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}                         disabledFieldSignal={disabledFieldSignal} />
 			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                                             />
 			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}  disabledFieldSignal={disabledFieldSignal} />
