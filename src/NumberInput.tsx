@@ -11,6 +11,7 @@ type Props = {
 	defaultValue?: number,
 	step?: number,
 	disabledFieldSignal?: Signal<string>,
+	max?: number,
 };
 
 const NumberInput: Component<Props> = props => {
@@ -25,6 +26,11 @@ const NumberInput: Component<Props> = props => {
 			deleteURLParam(props.name);
 		} else {
 			setURLParam(props.name, value().toString());
+		}
+	})
+	createEffect(() => {
+		if(props.max != null && props.max < value()) {
+			setValue(props.max);
 		}
 	})
 	const disabled = () => (
@@ -51,6 +57,7 @@ const NumberInput: Component<Props> = props => {
 			onChange={(e) => {
 				setValue(e.target.valueAsNumber);
 			}}
+			max={props.max}
 		/>
 	</>;
 }
