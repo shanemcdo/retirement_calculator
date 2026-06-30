@@ -13,6 +13,7 @@ function calculateData(
 	startingBalance: number,
 	interestRatePercent: number,
 	retirementAge: number,
+	stopInvestingAge: number,
 	maxAge: number,
 	startingInvestmentPerMonth: number,
 	investmentIncreasingRatePercent: number,
@@ -42,10 +43,10 @@ function calculateData(
 			break;
 		}
 		for(let i = 0; i < 12; i++) {
-			if(currentAge < retirementAge) {
+			if(currentAge < stopInvestingAge) {
 				principal += currentInvestmentPerMonth;
 				currentBalance += currentInvestmentPerMonth;
-			} else {
+			} else if(currentAge >= retirementAge) {
 				spending += monthlySpending;
 				currentBalance -= monthlySpending;
 			}
@@ -204,6 +205,7 @@ const App: Component = () => {
 		startingBalance: createSignal(defaultValues.startingBalance),
 		interestRate: createSignal(defaultValues.interestRate),
 		retirementAge: createSignal(defaultValues.retirementAge),
+		stopInvestingAge: createSignal(defaultValues.retirementAge),
 		maxAge: createSignal(defaultValues.maxAge),
 		startingInvestmentPerMonth: createSignal(defaultValues.startingInvestmentPerMonth),
 		investmentIncreasingRate: createSignal(defaultValues.investmentIncreasingRate),
@@ -281,6 +283,7 @@ const App: Component = () => {
 			inputSignals.startingBalance[0](),
 			inputSignals.interestRate[0](),
 			inputSignals.retirementAge[0](),
+			inputSignals.stopInvestingAge[0](),
 			inputSignals.maxAge[0](),
 			inputSignals.startingInvestmentPerMonth[0](),
 			inputSignals.investmentIncreasingRate[0](),
@@ -345,6 +348,7 @@ const App: Component = () => {
 			<NumberInput name="Starting Balance"               defaultValue={defaultValues.startingBalance}            valueSignal={inputSignals.startingBalance}            step={500}                                           />
 			<NumberInput name="Interest Rate (%)"              defaultValue={defaultValues.interestRate}               valueSignal={inputSignals.interestRate}               step={0.5}                                           />
 			<NumberInput name="Retirement Age"                 defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.retirementAge}                         disabledFieldSignal={disabledFieldSignal} />
+			<NumberInput name="Stop Investing Age"             defaultValue={defaultValues.retirementAge}              valueSignal={inputSignals.stopInvestingAge}                                                                />
 			<NumberInput name="Max Age"                        defaultValue={defaultValues.maxAge}                     valueSignal={inputSignals.maxAge}                     step={5}                                             />
 			<NumberInput name="Starting Investment Per Month"  defaultValue={defaultValues.startingInvestmentPerMonth} valueSignal={inputSignals.startingInvestmentPerMonth} step={50}  disabledFieldSignal={disabledFieldSignal} />
 			<NumberInput name="Investment Increasing Rate (%)" defaultValue={defaultValues.investmentIncreasingRate}   valueSignal={inputSignals.investmentIncreasingRate}   step={0.5}                                           />
