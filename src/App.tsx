@@ -344,6 +344,18 @@ const App: Component = () => {
 		plugins: {
 			annotation: {
 				annotations: {
+					stopInvesting: {
+						type: 'line',
+						xMin: inputSignals.stopInvestingAge[0]() - inputSignals.startingAge[0](),
+						xMax: inputSignals.stopInvestingAge[0]() - inputSignals.startingAge[0](),
+						borderColor: 'red',
+						borderWidth: 2,
+						label: {
+							display: true,
+							content: 'Retirement',
+							position: 'end',
+						},
+					},
 					retirement: {
 						type: 'line',
 						xMin: inputSignals.retirementAge[0]() - inputSignals.startingAge[0](),
